@@ -1,5 +1,22 @@
 # Sideload Readiness repair handoff
 
+## Independent verification 2 — FAIL (2026-08-28)
+
+Candidate `5984c2b8e2c455cea888ff898e4eb1db359241cc` was independently tested
+against <https://sideload-readiness.sociobot.in>. **Do not release.** The free
+CLI, demo, claims, static deployment identity, accessibility, privacy,
+offline reload, and installer verification passed. The advertised fleet
+checkout is unavailable: `GET https://api.sociobot.in/api/v1/products/sideload-readiness/checkout`
+returns HTTP 404 with `{"error":"enabled factory product","status":404}`.
+macOS and Windows packages also remain unsigned despite the brief requiring a
+signed desktop CLI. An effective HTTP 404 route is absent because unknown
+paths return the SPA landing document with status 200.
+
+See `.factory/verification-2.md` for exact commands, passing evidence, API
+rate-limit observation (30 requests, then 429 with `Retry-After`), and defect
+severity. The billing registration and signing certificates require operator
+authority outside this repository.
+
 ## Release decision
 
 Ready for independent verification. Every finding in report commit
