@@ -56,7 +56,7 @@ test('mobile layout has no horizontal overflow and visible controls meet touch s
   expect(undersized).toEqual([]);
 });
 
-test('demo stays local during its complete browser flow', async ({ page }) => {
+test('@claim:local-demo @claim:privacy demo stays in isolated storage and makes only same-origin requests', async ({ page }) => {
   const external = [];
   page.on('request', request => {
     if (new URL(request.url()).origin !== 'http://127.0.0.1:4173') external.push(request.url());
@@ -66,6 +66,38 @@ test('demo stays local during its complete browser flow', async ({ page }) => {
   await page.reload();
   await expect(page.getByText('Demo — sample data, nothing is saved.')).toBeVisible();
   expect(external).toEqual([]);
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual(['demo:sideload-readiness']);
+});
+
+test('@claim:fleet-review a cached valid license enables the local report queue', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:sideload-readiness', 'fixture-license');
+    localStorage.setItem('sb_license_verdict:sideload-readiness', JSON.stringify({ valid: true, checked_at: Date.now() }));
+  });
+  await page.goto('/');
+  await expect(page.locator('.price')).toContainText('$39');
+  await expect(page.getByRole('link', { name: 'Buy fleet review' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/sideload-readiness/checkout');
+  await expect(page.getByLabel('Add redacted JSON reports')).toBeVisible();
+  await page.getByLabel('Add redacted JSON reports').setInputFiles({
+    name: 'sample-report.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ schema: 'sideload-readiness/v1', device: { id: 'device-test', android: '15' }, score: 83 }))
+  });
+  await expect(page.getByText('1 local report queued.')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'device-test' })).toBeVisible();
+});
+
+test('@claim:license-verification sends a pasted token only to Sociobot on submit', async ({ page }) => {
+  let requested;
+  await page.route('https://api.sociobot.in/api/v1/products/sideload-readiness/verify?**', async route => {
+    requested = route.request().url();
+    await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ valid: true, reason: 'ok' }) });
+  });
+  await page.goto('/');
+  await page.getByLabel('Have a license? Paste it here.').fill('fixture license');
+  await page.getByRole('button', { name: 'Verify fleet license' }).click();
+  await expect(page.locator('#license-status')).toHaveText('Fleet review is active on this browser.');
+  expect(requested).toBe('https://api.sociobot.in/api/v1/products/sideload-readiness/verify?license=fixture%20license');
 });
 
 test('service worker activates and the demo reloads offline', async ({ page, context }) => {

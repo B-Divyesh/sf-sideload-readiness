@@ -109,10 +109,10 @@ accessibility, offline reloads, privacy, and release-download behavior.
 
 ## Privacy and license
 
-The CLI sends no device report to this project. It only runs local `adb`
-commands and writes an output file when requested. Hardware serials are
-replaced with a redacted ID in exported reports. The site has no analytics or
-third-party runtime scripts. See [Privacy](https://sideload-readiness.sociobot.in/privacy)
+The CLI has no report-upload command. It only runs local `adb` commands and
+writes an output file when requested. Hardware serials are replaced with a
+redacted ID in exported reports. The site has no analytics or third-party
+runtime scripts. See [Privacy](https://sideload-readiness.sociobot.in/privacy)
 and [Terms](https://sideload-readiness.sociobot.in/terms).
 
 ## License

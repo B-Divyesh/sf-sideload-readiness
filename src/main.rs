@@ -287,7 +287,7 @@ fn emit(report: Report, json: bool, output: Option<PathBuf>) {
 mod tests {
     use super::*;
     #[test]
-    fn claim_demo_report_is_redacted_and_actionable() {
+    fn demo_report_internal_shape_is_stable() {
         let report = demo_report().unwrap();
         let json = serde_json::to_string(&report).unwrap();
         assert_eq!(report.mode, "demo");
@@ -297,7 +297,7 @@ mod tests {
         assert!(report.recovery_checklist.len() >= 4);
     }
     #[test]
-    fn claim_demo_json_is_machine_readable() {
+    fn demo_report_internal_json_serializes() {
         let report = demo_report().unwrap();
         let rendered = serde_json::to_string_pretty(&report).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&rendered).unwrap();
@@ -305,7 +305,7 @@ mod tests {
         assert_eq!(parsed["findings"].as_array().unwrap().len(), 6);
     }
     #[test]
-    fn serials_are_never_exported_verbatim() {
+    fn serial_redactor_changes_the_input() {
         assert_ne!(fnv_redact("ABCD1234"), "ABCD1234");
     }
 }

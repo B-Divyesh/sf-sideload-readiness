@@ -15,7 +15,7 @@ case "$arch" in
   arm64|aarch64) arch=aarch64 ;;
   *) echo "Unsupported CPU: $arch. Use the release page." >&2; exit 1 ;;
 esac
-version=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" | sed -n 's/.*"tag_name":"v\([^"]*\)".*/\1/p' | head -n1)
+version=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\([^"]*\)".*/\1/p' | head -n1)
 [ -n "$version" ] || { echo "Could not find a published release. Try again later." >&2; exit 1; }
 asset="sideload-readiness-${platform}-${arch}.tar.gz"
 tmp=$(mktemp -d)
