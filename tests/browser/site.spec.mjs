@@ -46,7 +46,7 @@ test('history navigation restores the route and focus', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
   await page.goBack();
-  await expect(page).toHaveURL('http://127.0.0.1:4173/');
+  await expect(page).toHaveURL(new URL('/', process.env.BASE_URL || 'http://127.0.0.1:4173').href);
   await expect(page.locator('h1')).toHaveText('Check Android update safety');
   await expect(page.locator('h1')).toBeFocused();
 });
@@ -70,6 +70,21 @@ test('mobile layout has no horizontal overflow and visible controls meet touch s
   expect(undersized).toEqual([]);
 });
 
+test('reduced motion and 200% text preserve the report', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/demo');
+  const motion = await page.locator('.finding').first().evaluate(element => {
+    const style = getComputedStyle(element);
+    return { animation: style.animationName, transition: style.transitionDuration };
+  });
+  expect(motion.animation).toBe('none');
+  expect(Number.parseFloat(motion.transition)).toBeLessThanOrEqual(0.001);
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+  await expect(page.locator('h1')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reset demo' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+});
+
 test('@claim:local-demo the sample uses only its demo storage namespace', async ({ page }) => {
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Reset demo' }).click();
@@ -82,8 +97,9 @@ test('@claim:local-demo the sample uses only its demo storage namespace', async 
 
 test('@claim:privacy page loads and the full demo flow make no third-party requests', async ({ page }) => {
   const external = [];
+  const productOrigin = new URL(process.env.BASE_URL || 'http://127.0.0.1:4173').origin;
   page.on('request', request => {
-    if (new URL(request.url()).origin !== 'http://127.0.0.1:4173') external.push(request.url());
+    if (new URL(request.url()).origin !== productOrigin) external.push(request.url());
   });
   await page.goto('/');
   await page.goto('/demo');

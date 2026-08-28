@@ -102,6 +102,10 @@ npm run build:site   # creates dist/site with index.html at its root
 npm run dev          # serves the source site on http://localhost:4173
 ```
 
+`npm run build:site` creates the deployable static site in `dist/site`. The
+factory deploys that directory; this repository does not manage DNS or cloud
+infrastructure.
+
 `npm run build` is an alias for the deploy build. Release installers are built
 only in GitHub Actions by `.github/workflows/release.yml`.
 `npm test` includes desktop and 390 px mobile browser checks for keyboard use,

@@ -7,10 +7,10 @@ export default defineConfig({
   retries: 0,
   reporter: [['line']],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:4173',
     trace: 'retain-on-failure'
   },
-  webServer: {
+  webServer: process.env.BASE_URL ? undefined : {
     command: 'node scripts/serve.mjs',
     url: 'http://127.0.0.1:4173',
     reuseExistingServer: false
