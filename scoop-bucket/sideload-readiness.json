@@ -4,7 +4,7 @@
   "homepage": "https://sideload-readiness.sociobot.in",
   "license": "MIT",
   "url": "https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.0/sideload-readiness-windows-x86_64.zip",
-  "hash": "REPLACE_WITH_RELEASE_SHA256",
+  "hash": "c416fbf9762c6af4db3ec74e02eaaaa85af8544f29b21efa06ab7b5773abf05e",
   "bin": "sideload-readiness.exe",
   "checkver": "github"
 }

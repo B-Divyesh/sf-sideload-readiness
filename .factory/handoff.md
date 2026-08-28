@@ -22,8 +22,16 @@ Local browser verification used `/opt/fleet/lib/verify-url.sh` against the site 
 
 Lighthouse (mobile, local source server): performance **100**, accessibility **100**, LCP **1.66 s**, CLS **0**. Initial JS is 16 KB, CSS is 8 KB, and the mobile hero is 68 KB WebP.
 
+## Release verification
+
+`v0.1.0` was pushed and GitHub Actions run `33185256655` completed successfully.
+The published release includes Linux `.tar.gz`, `.deb`, `.rpm`; macOS arm64/x64
+`.tar.gz` and `.pkg`; Windows `.zip`; `SHA256SUMS`; and `latest.json`.
+The Windows asset checksum was downloaded and matched `SHA256SUMS`. Scoop and
+the arm64 Homebrew formula now contain the published checksums.
+
 ## Known gaps / operator action
 
-- A GitHub release cannot be created from this container because no GitHub CLI or repository credentials are available. Push `main`, tag `v0.1.0`, and let `.github/workflows/release.yml` publish the assets. Then replace the `REPLACE_WITH_RELEASE_SHA256` values in the Scoop and Homebrew templates with the `SHA256SUMS` values before publishing those manifests.
+- The Homebrew formula is ready to place in `B-Divyesh/homebrew-sideload-readiness`; publishing that separate tap remains an operator action. The winget manifest is ready to submit to `microsoft/winget-pkgs`.
 - macOS and Windows artifacts are intentionally unsigned. Add `APPLE_CERTIFICATE` and `WINDOWS_CERT_PFX` only when the product owner has signing credentials; the workflow currently makes usable unsigned builds.
 - Android does not expose a complete recovery-sideload state from a running system. The report marks recovery as `needs-review` and points to the device maker's approved recovery instructions rather than guessing or bypassing a control.
