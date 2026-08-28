@@ -10,25 +10,23 @@ is released and the static site is deployed. The brief, visual direction,
 
 ## Repairs
 
-- **P0 installer:** the POSIX parser now accepts GitHub's whitespace around
+- **P0 installer:** the POSIX parser accepts GitHub's whitespace around
   `"tag_name": "v…"`. A process regression runs the real script against
   realistic GitHub JSON and checksum-protected Linux x64 and macOS arm64
-  tarballs in isolated homes. The deployed script installs the real v0.1.1
-  release successfully.
-- **P1 release manifest:** `scripts/create-release-manifest.mjs` validates its
-  required assets and writes absolute GitHub download URLs. The release
-  workflow uses it and rejects tags that differ from the Cargo version.
-- **P1 claims:** `.factory/claims.json` inventories 14 reliance claims. CLI
-  claims invoke the public binary; browser claims use clean contexts. Coverage
-  includes redaction, the adb read-only allowlist, unauthorized devices,
-  no-adb demo use, free checks, demo privacy, fleet review, license
-  verification, installers, platform packaging, and the manifest.
+  tarballs in isolated homes. The deployed script installs v0.1.1.
+- **P1 release manifest:** `scripts/create-release-manifest.mjs` validates
+  required assets and emits absolute GitHub download URLs. The workflow uses
+  it and rejects tags that differ from the Cargo version.
+- **P1 claims:** `.factory/claims.json` inventories 14 reliance claims. Public
+  CLI and browser tests now cover redaction, the read-only adb allowlist,
+  unauthorized devices, demo isolation, free checks, privacy, fleet review,
+  license verification, installers, platform packaging, and the manifest.
 - **P3 caching:** production JavaScript and CSS have SHA-256-derived names and
-  `public, max-age=31536000, immutable`. The stable worker uses `no-cache`,
-  references the fingerprinted shell, and replaces old caches.
-- Browser coverage now runs against built `dist/site` output. It checks
-  response headers, reduced motion, 200% text, desktop, 390 px mobile,
-  keyboard focus, axe, privacy, offline/update, and release behavior.
+  one-year immutable caching. The stable worker uses `no-cache`, references
+  the fingerprinted shell, and replaces old caches.
+- Browser coverage runs against built `dist/site` and checks response headers,
+  reduced motion, 200% text, desktop, 390 px mobile, keyboard, axe, privacy,
+  offline/update, and release behavior.
 
 ## Clean local verification — 2026-08-28
 
@@ -73,9 +71,10 @@ sh -n site/install.sh
 - GitHub Actions run `33194140006` succeeded for Linux x64, macOS arm64,
   macOS x64, Windows x64, and the release job.
 - Assets include Linux tar/deb/rpm, both macOS tar/pkg variants, Windows zip,
-  `SHA256SUMS`, and `latest.json`. Every manifest platform entry is an
-  absolute v0.1.1 asset URL.
-- All eight packages matched `SHA256SUMS`. Key values: Linux tar
+  `SHA256SUMS`, and `latest.json`. All eight packages downloaded and matched
+  `SHA256SUMS`; the Windows zip and both macOS tarballs contain the expected
+  single binaries. Every manifest platform entry is an absolute v0.1.1 URL.
+- Key SHA-256 values: Linux tar
   `8ca68826ad662f4cc4b2e6d7f2a235e05a3f2cfb4c9be97a3ca152e5c602bb98`;
   macOS arm64 tar
   `e999964dbe1f06631c341091ad215bdffb907e98d634d9095783babdf32f2fe8`;
@@ -83,9 +82,9 @@ sh -n site/install.sh
   `c9b8e7bcaca39c3e8b0c4877d5872526e18ba98855be24c574ff4fb089730bf2`;
   Windows zip
   `c01caee6006897c1296d52f44698a8affc8234ad91260eee91c7446ea96769ee`.
-- The downloaded Linux binary reports 0.1.1 and emits valid, redacted,
-  six-finding JSON. The live one-line installer verified SHA-256 and installed
-  that binary in a clean temporary home.
+- The Linux binary reports 0.1.1 and emits valid, redacted, six-finding JSON.
+  The live one-line installer verified SHA-256 and installed that binary in a
+  clean temporary home.
 - Homebrew, Scoop, and winget metadata uses the published v0.1.1 URLs and
   exact checksums.
 
@@ -97,14 +96,14 @@ sh -n site/install.sh
   `/`, `/demo`, `/privacy`, `/terms`, `/missing`, both installer scripts, the
   worker, robots, sitemap, manifest, and both hashed assets return 200.
 - Local/live SHA-256 matches for HTML, both code assets, the worker, and
-  `install.sh`. The assets return one-year immutable caching; the worker is
+  `install.sh`. Assets use one-year immutable caching; the worker is
   `no-cache`. CSP, HSTS, nosniff, referrer, and permissions headers are live.
 - Live `verify-url.sh`: 866 ms, correct title/lang/main, one h1, complete alt
   text, labeled buttons, and no console errors.
-- Live desktop and 390 px checks passed all five routes with zero
-  serious/critical axe findings. Keyboard focus, reduced motion, 200% text,
-  overflow, 44 px targets, same-origin demo traffic, service-worker control,
-  and offline reload passed without console errors.
+- The complete live Playwright matrix passed 33 tests on desktop and 390 px
+  mobile with one intentional skip. Keyboard focus, axe, reduced motion, 200%
+  text, overflow, target sizing, privacy, offline/update, response policy, and
+  release selection passed without console errors.
 - Live Lighthouse: 100 performance, 100 accessibility, 100 best practices,
   100 SEO; LCP 1.262 s; CLS 0; 80,531 bytes transferred.
 - Invalid live license verification returned HTTP 200 with the documented
