@@ -1,0 +1,12 @@
+name: sideload-readiness
+arch: amd64
+platform: linux
+version: 0.1.0
+maintainer: Param Factory
+description: Read-only Android sideload readiness checks
+license: MIT
+contents:
+  - src: ./out/sideload-readiness
+    dst: /usr/local/bin/sideload-readiness
+    file_info:
+      mode: 0755

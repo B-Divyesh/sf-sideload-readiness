@@ -55,10 +55,9 @@ jobs:
           mkdir -p out/deb/usr/local/bin
           cp out/sideload-readiness out/deb/usr/local/bin/
           dpkg-deb --build out/deb out/sideload-readiness-linux-x86_64.deb
-          sudo apt-get update && sudo apt-get install -y rpm ruby-fpm
-          mkdir -p out/rpm/usr/local/bin
-          cp out/sideload-readiness out/rpm/usr/local/bin/
-          fpm -s dir -t rpm -n sideload-readiness -v "${GITHUB_REF_NAME#v}" -C out/rpm -p out/sideload-readiness-linux-x86_64.rpm usr/local/bin/sideload-readiness
+          sudo apt-get update && sudo apt-get install -y rpm
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.1
+          "$(go env GOPATH)/bin/nfpm" package --config packaging/nfpm.yaml --packager rpm --target out/sideload-readiness-linux-x86_64.rpm
       - name: Package Windows zip
         if: runner.os == 'Windows'
         shell: pwsh
