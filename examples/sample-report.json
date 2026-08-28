@@ -1,0 +1,7 @@
+{
+  "schema": "sideload-readiness/v1",
+  "mode": "demo",
+  "device": {"id": "device-6f31a0b2", "android": "15 (sample)", "usb_mode": "mtp,adb"},
+  "score": 83,
+  "summary": "Ready for a cautious approved-package update."
+}

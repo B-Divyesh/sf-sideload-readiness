@@ -1,0 +1,7 @@
+{
+  "slug": "sideload-readiness",
+  "title": "Sideload Readiness",
+  "artifact_class": "cli-installers",
+  "smallest_useful_product": "A signed desktop CLI that runs read-only adb diagnostics, checks device readiness, and emits a redacted report and recovery checklist.",
+  "constraints": "Never evade Android security controls. Require USB debugging consent. Redact device IDs. Support Linux, macOS, and Windows."
+}

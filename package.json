@@ -1,0 +1,11 @@
+{
+  "name": "sideload-readiness-site",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "npm run build:site",
+    "build:site": "node scripts/build-site.mjs",
+    "test": "node --test tests/site.test.mjs",
+    "dev": "node scripts/serve.mjs"
+  }
+}
