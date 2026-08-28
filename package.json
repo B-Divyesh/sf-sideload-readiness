@@ -1,13 +1,14 @@
 {
   "name": "sideload-readiness-site",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "build": "npm run build:site",
     "build:site": "node scripts/build-site.mjs",
     "test": "npm run test:unit && npm run test:browser",
     "test:unit": "node --test",
     "test:browser": "playwright test",
+    "test:browser:production": "npm run build:site && SITE_ROOT=dist/site playwright test",
     "dev": "node scripts/serve.mjs"
   },
   "devDependencies": {

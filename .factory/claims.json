@@ -1,7 +1,72 @@
 [
-  {"id":"demo-report","claim":"The sample shows a redacted readiness report and recovery checklist.","where":"Demo page and README","test":"cargo test claim_demo_report_is_redacted_and_actionable","sandbox":"Fresh clone; run the bundled demo report fixture."},
-  {"id":"json-report","claim":"The command can print a machine-readable report.","where":"README usage","test":"cargo test claim_demo_json_is_machine_readable","sandbox":"Fresh clone; serialize the bundled demo report."},
-  {"id":"redacted-id","claim":"Exported reports redact device IDs.","where":"Landing facts and README","test":"cargo test serials_are_never_exported_verbatim","sandbox":"Fresh clone; test the report redactor."},
-  {"id":"local-demo","claim":"The browser demo uses sample data in its own storage namespace.","where":"Demo banner and README","test":"npm run test:unit -- --test-name-pattern='@claim:local-demo'","sandbox":"Fresh site source; assert the sample report and demo: namespace are local."},
-  {"id":"privacy","claim":"The site loads no third-party runtime scripts.","where":"Privacy page and README","test":"npm run test:unit -- --test-name-pattern='@claim:privacy'","sandbox":"Fresh site source; assert every script source is same-origin."}
+  {
+    "id": "demo-report",
+    "claim": "The sample command produces a redacted readiness report with an actionable recovery checklist.",
+    "where": "Demo page and README",
+    "test": "cargo test --test cli claim_demo_report_public_command -- --exact",
+    "sandbox": "Run the public demo command in a fresh process and inspect its Markdown output file."
+  },
+  {
+    "id": "json-report",
+    "claim": "The public demo command writes a machine-readable sideload-readiness/v1 JSON report.",
+    "where": "README usage",
+    "test": "cargo test --test cli claim_json_report_public_demo_command -- --exact",
+    "sandbox": "Run the public demo command with --json --output and parse the resulting file."
+  },
+  {
+    "id": "redacted-id",
+    "claim": "Exported device reports replace the real hardware serial with a redacted ID.",
+    "where": "Landing facts, Privacy, and README",
+    "test": "cargo test --test cli claim_redacted_id_public_check_command -- --exact",
+    "sandbox": "Run the public check command against a fake adb device with a known serial; assert the serial is absent from JSON output."
+  },
+  {
+    "id": "read-only-adb",
+    "claim": "Device checks use read-only adb queries and do not install apps, unlock devices, or change Android settings.",
+    "where": "Landing page and README",
+    "test": "cargo test --test cli claim_read_only_adb_public_check_command -- --exact",
+    "sandbox": "Run the public check command against a recording adb fixture and reject every mutating command."
+  },
+  {
+    "id": "free-single-device",
+    "claim": "A single-device readiness check runs without a paid license.",
+    "where": "Landing facts, fleet section, and README",
+    "test": "cargo test --test cli claim_single_device_check_needs_no_license -- --exact",
+    "sandbox": "Run the public check command against one fake device with no license environment value."
+  },
+  {
+    "id": "local-demo",
+    "claim": "The browser demo uses sample data only in its separate demo storage namespace.",
+    "where": "Demo banner, demo documentation, and README",
+    "test": "npm run test:browser -- --project=chromium --grep='@claim:local-demo'",
+    "sandbox": "Fresh browser context; reset and reload the demo; assert the only storage key is demo:sideload-readiness."
+  },
+  {
+    "id": "privacy",
+    "claim": "The site loads no third-party runtime scripts or passive third-party requests.",
+    "where": "Privacy page and README",
+    "test": "npm run test:browser -- --project=chromium --grep='@claim:privacy'",
+    "sandbox": "Fresh browser context; intercept all landing, demo, privacy, and terms requests and allow only same-origin traffic."
+  },
+  {
+    "id": "installer-checksum",
+    "claim": "The Linux and macOS installer resolves GitHub's release JSON, verifies SHA-256, and installs the matching archive.",
+    "where": "Install section and README",
+    "test": "node --test --test-name-pattern='@claim:installer-checksum' tests/release.test.mjs",
+    "sandbox": "Execute the shell installer with a realistic GitHub API fixture, local release archive, and matching checksum in a temporary HOME."
+  },
+  {
+    "id": "release-platforms",
+    "claim": "Releases provide direct asset URLs for Linux, macOS arm64/x64, and Windows.",
+    "where": "Install section and README",
+    "test": "node --test --test-name-pattern='@claim:release-platforms' tests/release.test.mjs",
+    "sandbox": "Generate latest.json for a fixture release and validate every platform entry as an absolute GitHub asset URL."
+  },
+  {
+    "id": "fleet-local",
+    "claim": "A valid fleet license adds a local report queue and package-status table in the browser.",
+    "where": "Fleet section and README",
+    "test": "npm run test:browser -- --project=chromium --grep='@claim:fleet-local'",
+    "sandbox": "Mock a valid Sociobot verdict, upload a redacted report through the UI, and assert it is rendered and stored locally."
+  }
 ]

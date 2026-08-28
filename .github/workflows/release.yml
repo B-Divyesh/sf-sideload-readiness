@@ -4,6 +4,14 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing or new release tag
+        required: true
+        default: v0.1.1
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -45,13 +53,13 @@ jobs:
           tar -C out -czf out/sideload-readiness-${{ matrix.label }}.tar.gz sideload-readiness
       - name: Package macOS pkg
         if: runner.os == 'macOS'
-        run: pkgbuild --root out/root --identifier in.sociobot.sideload-readiness --version ${GITHUB_REF_NAME#v} out/sideload-readiness-${{ matrix.label }}.pkg
+        run: pkgbuild --root out/root --identifier in.sociobot.sideload-readiness --version ${RELEASE_TAG#v} out/sideload-readiness-${{ matrix.label }}.pkg
       - name: Package Linux deb and rpm
         if: runner.os == 'Linux'
         shell: bash
         run: |
           mkdir -p out/deb/DEBIAN
-          printf 'Package: sideload-readiness\nVersion: %s\nArchitecture: amd64\nMaintainer: Param Factory\nDescription: Read-only Android sideload readiness checks\n' "${GITHUB_REF_NAME#v}" > out/deb/DEBIAN/control
+          printf 'Package: sideload-readiness\nVersion: %s\nArchitecture: amd64\nMaintainer: Param Factory\nDescription: Read-only Android sideload readiness checks\n' "${RELEASE_TAG#v}" > out/deb/DEBIAN/control
           mkdir -p out/deb/usr/local/bin
           cp out/sideload-readiness out/deb/usr/local/bin/
           dpkg-deb --build out/deb out/sideload-readiness-linux-x86_64.deb
@@ -79,6 +87,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: release
@@ -89,10 +98,11 @@ jobs:
           find release -type f -exec cp {} assets/ \;
           cd assets
           find . -maxdepth 1 -type f ! -name SHA256SUMS ! -name latest.json -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS
-          tag="${GITHUB_REF_NAME:-v0.1.0}"
+          tag="$RELEASE_TAG"
           version="${tag#v}"
-          printf '{"version":"%s","release":"https://github.com/%s/%s/releases/tag/%s","platforms":{"linux":"sideload-readiness-linux-x86_64.tar.gz","macos-arm64":"sideload-readiness-macos-aarch64.tar.gz","macos-x64":"sideload-readiness-macos-x86_64.tar.gz","windows":"sideload-readiness-windows-x86_64.zip"}}\n' "$version" "$GITHUB_REPOSITORY_OWNER" "${GITHUB_REPOSITORY#*/}" "$tag" > latest.json
+          node ../scripts/release-manifest.mjs "$version" "$GITHUB_REPOSITORY" "$tag" > latest.json
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           files: assets/*
           generate_release_notes: true

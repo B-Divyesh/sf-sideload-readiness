@@ -56,16 +56,48 @@ test('mobile layout has no horizontal overflow and visible controls meet touch s
   expect(undersized).toEqual([]);
 });
 
-test('demo stays local during its complete browser flow', async ({ page }) => {
-  const external = [];
-  page.on('request', request => {
-    if (new URL(request.url()).origin !== 'http://127.0.0.1:4173') external.push(request.url());
-  });
+test('@claim:local-demo the sample uses only its demo storage namespace', async ({ page }) => {
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await page.reload();
   await expect(page.getByText('Demo — sample data, nothing is saved.')).toBeVisible();
+  const keys = await page.evaluate(() => Object.keys(localStorage));
+  expect(keys).toEqual(['demo:sideload-readiness']);
+  expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).toContain('device-6f31a0b2');
+});
+
+test('@claim:privacy page loads and the full demo flow make no third-party requests', async ({ page }) => {
+  const external = [];
+  page.on('request', request => {
+    if (new URL(request.url()).origin !== 'http://127.0.0.1:4173') external.push(request.url());
+  });
+  await page.goto('/');
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await page.reload();
+  await page.goto('/privacy');
+  await page.goto('/terms');
   expect(external).toEqual([]);
+});
+
+test('@claim:fleet-local a valid license enables a browser-local report queue', async ({ page }) => {
+  await page.route('https://api.sociobot.in/api/v1/products/sideload-readiness/verify?license=fixture-license', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: { 'access-control-allow-origin': '*' },
+    body: JSON.stringify({ valid: true, reason: 'ok', expires_at: null })
+  }));
+  await page.goto('/');
+  await page.getByLabel('Have a license? Paste it here.').fill('fixture-license');
+  await page.getByRole('button', { name: 'Verify fleet license' }).click();
+  await expect(page.getByText('Fleet review is active on this browser.')).toBeVisible();
+  await page.getByLabel('Add redacted JSON reports').setInputFiles({
+    name: 'sample-report.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ schema: 'sideload-readiness/v1', device: { id: 'device-redacted', android: '15' }, score: 83 }))
+  });
+  await expect(page.getByText('1 local report queued.')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('fleet:reports'))).toContain('device-redacted');
 });
 
 test('service worker activates and the demo reloads offline', async ({ page, context }) => {
