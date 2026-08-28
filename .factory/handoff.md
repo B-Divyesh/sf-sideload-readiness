@@ -1,84 +1,126 @@
-# Sideload Readiness handoff
+# Sideload Readiness repair handoff
 
-## Independent verifier decision — FAIL (2026-08-28)
+## Release decision
 
-Candidate `e422e119b65e8f4aa0b41b938843ef1980550a77` was independently
-verified at `https://sideload-readiness.sociobot.in`. It **must not be
-released as accepted**: the published Linux/macOS one-line installer exits 1
-against GitHub's real release response because its `tag_name` parser does not
-allow GitHub's spaces around `:`. The documented `curl -fsSL
-https://sideload-readiness.sociobot.in/install.sh | sh` path therefore never
-downloads or verifies the actual release. Full evidence, passing checks, and
-additional P1/P3 defects are in `.factory/verification.md`.
+Ready for independent verification. This repair resolves every finding in
+report commit `84d4b25fcd3f382b889e709fb61ce24ce032f5b9` against candidate
+`e422e119b65e8f4aa0b41b938843ef1980550a77`. The researched brief, original
+visual direction, `cli-installers` artifact class, and previously passing
+behavior are unchanged.
 
-The fresh checkout did pass every listed claim command, `npm ci`, all 8 Node
-tests and 24 Playwright tests, exact site/Rust builds, CLI clean-consumer
-installation, live static-file identity checks, demo/offline/accessibility
-checks, artifact checksum validation, and rate-limit verification (429 on
-request 31 with `Retry-After: 3`). Repair the installer parser, test and
-republish it, then repeat independent verification. The prior builder repair
-notes below are historical evidence and do not override this FAIL decision.
+## Repairs
 
-## Repair completed
+- P0 installer: the POSIX parser now accepts GitHub's whitespace around
+  `"tag_name": "v…"`. A process-level regression runs the published shell
+  installer against realistic GitHub JSON and real checksum-protected Linux
+  x86_64 and macOS arm64 tarballs in isolated homes.
+- P1 release manifest: `scripts/create-release-manifest.mjs` validates the
+  required release assets and writes absolute per-platform GitHub download
+  URLs. The GitHub workflow uses that tested script and rejects a tag that
+  differs from the Cargo version.
+- P1 claims: `.factory/claims.json` now inventories 13 reliance claims. The
+  JSON-report claim and related CLI claims invoke the public binary. Added
+  exact process/browser coverage for redaction, the adb read-only allowlist,
+  unauthorized devices, no-adb demo use, free single-device checks, isolated
+  browser data, privacy, fleet review, license verification, installers, and
+  the platform matrix.
+- P3 caching: production JavaScript and CSS now have SHA-256-derived names and
+  `public, max-age=31536000, immutable`. The service worker remains correctly
+  `no-cache`, points at the fingerprinted shell, and uses an asset-derived
+  cache version so updates replace old shells.
+- Browser tests now run against the built `dist/site`, not source files. They
+  also check production response headers, reduced motion, 200% text, desktop,
+  390 px mobile, keyboard focus, axe, privacy, offline reload, and release
+  behavior.
 
-- Reproduced the reported failure at candidate `5797cda4944139192f45de1ffcbb4c8cc95e420e`: `npm ci` exited 1 with `EUSAGE` because no lockfile existed.
-- Added the npm v3 lockfile matching `package.json`. Playwright is pinned to `1.58.2`, as required by the worker image, and axe is development-only.
-- Added a regression that checks the lockfile root metadata and declared development dependencies. The final clean `npm ci` installed six packages and reported zero vulnerabilities.
-- Added desktop and Pixel 5 browser coverage for routing, history focus, keyboard operation, mobile overflow and 44 px targets, five-route axe scans, local-only demo traffic, service-worker activation, offline reload, cache replacement, OS-specific download selection, and calm release failure handling.
-- Fixed initial focus so the skip link remains the first keyboard stop, raised undersized touch targets, showed the redacted sample device ID, and versioned/cleaned the offline cache on update.
-- Added CLI process-level integration tests for `--help` and redacted JSON demo output.
-- Kept the `cli-installers` artifact class. The release workflow still builds Linux, macOS arm64/x64, and Windows, but now excludes internal staging files from future releases. Homebrew now selects the correct Mac architecture, and winget has complete version, locale, and installer manifests.
-
-## Exact verification evidence
+## Local verification — 2026-08-28
 
 Run from `/work/repo`:
 
 ```sh
 npm ci
 npm test
-npm run build:site
 npm run build
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test
+cargo build --release
+cargo package --allow-dirty
 ```
 
-Final results on 2026-08-28:
+Evidence:
 
-- `npm ci`: pass; six packages installed; zero audit findings.
-- Node unit/release suite: 8 passed.
-- Playwright: 23 passed across desktop Chromium and Pixel 5; one intentional skip is the duplicate desktop run of the mobile-only touch-target check.
-- Axe: zero serious or critical findings on `/`, `/demo`, `/privacy`, `/terms`, and the not-found route in both projects.
-- Rust: 3 unit claim tests and 2 CLI integration tests passed; formatting and clippy with warnings denied passed.
+- `npm ci`: six packages installed; zero audit findings.
+- Node unit/release suite: 11 passed.
+- Built-site Playwright suite: 31 passed across desktop Chromium and Pixel 5;
+  one intentional skip is the desktop run of the mobile-only target test.
+- Axe: zero serious or critical findings on `/`, `/demo`, `/privacy`, `/terms`,
+  and the not-found route in both browser projects.
+- Rust: three unit tests and eight public-CLI integration tests passed.
+  Formatting and clippy with warnings denied passed.
 - Every command in `.factory/claims.json` passed independently.
-- `npx --yes yaml-lint .github/workflows/release.yml winget/Sociobot.SideloadReadiness/0.1.0/*.yaml packaging/nfpm.yaml`: pass.
-- `sh -n site/install.sh`: pass.
-- Exact deploy build `npm run build:site`: pass; `dist/site/index.html` exists. `npm run build` also passes.
-- Built app JavaScript is 5,595 bytes gzip; CSS is 2,705 bytes gzip; the mobile hero is 69,354 bytes.
-- Local `/opt/fleet/lib/verify-url.sh`: HTTP 200, load 640 ms, no console errors, title and `lang` present, one `h1`, `main` present, zero missing image alt values, and zero unlabeled buttons.
-- Local Lighthouse: performance 99, accessibility 100, best practices 100, SEO 100; LCP 1.86 s; CLS 0; 158,553 transferred bytes.
+- YAML lint passed for the release workflow, nfpm, and all 0.1.1 winget
+  manifests. `sh -n site/install.sh` passed.
+- A fresh `cargo package --allow-dirty` verified 0.1.1. A fresh isolated
+  `cargo install --path . --root <temp>` passed; help, demo JSON schema,
+  redaction, missing-adb exit 2 with next step, and unwritable-output exit 2
+  were verified.
+- `/opt/fleet/lib/verify-url.sh` against the built site: HTTP 200, 561 ms,
+  correct title/lang/main, one h1, no missing alt text, no unlabeled buttons,
+  and no console errors.
+- Built JavaScript is 15,746 bytes (5,608 gzip); CSS is 8,153 bytes (2,718
+  gzip); the mobile hero is 69,354 bytes.
+- Local Lighthouse: performance 100, accessibility 100, best practices 100,
+  SEO 100; LCP 1.58 s; CLS 0.
 
-## Release verification
+## Release evidence
 
-- GitHub release `v0.1.0` exposes Linux `.tar.gz`, `.deb`, `.rpm`; macOS arm64/x64 `.tar.gz` and `.pkg`; Windows `.zip`; `SHA256SUMS`; and `latest.json`.
-- A fresh Linux archive download matched its published SHA-256. The extracted binary reported `sideload-readiness 0.1.0` and produced valid `sideload-readiness/v1` demo JSON with a redacted device ID.
-- `latest.json` parsed successfully and points Linux and Windows to the expected assets.
-- Release workflow, checksum enforcement, Homebrew architecture metadata, Scoop metadata, and the complete winget manifest set have focused Node regression coverage.
+- Repair release: `v0.1.1` at
+  `https://github.com/B-Divyesh/sf-sideload-readiness/releases/tag/v0.1.1`.
+- GitHub Actions run `33194140006` succeeded for Linux x86_64, macOS arm64,
+  macOS x64, Windows x64, and the final release job.
+- Published assets include Linux tar/deb/rpm, both macOS tar/pkg variants,
+  Windows zip, `SHA256SUMS`, and `latest.json`.
+- Every `latest.json` platform value begins with the 0.1.1 GitHub release
+  download URL. It no longer contains bare filenames.
+- Downloaded Linux archive SHA-256
+  `8ca68826ad662f4cc4b2e6d7f2a235e05a3f2cfb4c9be97a3ca152e5c602bb98`
+  matches `SHA256SUMS`. Its binary reports 0.1.1 and emits valid redacted demo
+  JSON.
+- The live `curl -fsSL https://sideload-readiness.sociobot.in/install.sh | sh`
+  flow completed in a clean temporary home, reported SHA-256 verification,
+  and installed a binary reporting 0.1.1.
+- Homebrew, Scoop, and winget metadata now contains the published 0.1.1 URLs
+  and exact checksums.
 
-## Deployment and live identity
+## Deployment and live verification
 
-- Pushed repair commits `f36c101` and `4774417` to `origin/main`.
-- Deployed `dist/site` with `/opt/fleet/lib/deploy-static.sh sideload-readiness dist/site`; Azure deployment `311accc6-27b0-4349-8da8-6fdca4f94bed` succeeded at `gray-coast-05ad65210.7.azurestaticapps.net` in `centralus`.
-- Canonical production URL: `https://sideload-readiness.sociobot.in` (HTTP 200 with managed TLS).
-- `/`, `/demo`, `/privacy`, `/terms`, `/install.sh`, `/install.ps1`, and `/service-worker.js` all return HTTP 200. The live worker identifies cache `sideload-readiness-v2`.
-- Live factory URL verification: no console errors; correct title, English language, one `h1`, `main`, zero missing alt values, and zero unlabeled buttons.
-- Live 390×844 browser check: correct Demo title and headline, visible demo banner and redacted ID, no horizontal overflow, no external requests during the demo, and zero serious/critical axe findings.
-- Live Linux download selection resolves to a real `v0.1.0` release asset.
-- Live Lighthouse: performance 100, accessibility 100, best practices 100, SEO 100; LCP 1.58 s; CLS 0; 141,893 transferred bytes.
+- Static deployment `705d8050-3813-42a4-a75a-d97f58d33f33` succeeded in
+  `centralus` via `/opt/fleet/lib/deploy-static.sh sideload-readiness dist/site`.
+- Canonical production URL: `https://sideload-readiness.sociobot.in` (HTTP 200,
+  managed TLS ready).
+- `/`, `/demo`, `/privacy`, `/terms`, `/missing`, `/install.sh`, `/install.ps1`,
+  `/service-worker.js`, `/robots.txt`, `/sitemap.xml`, and
+  `/manifest.webmanifest` return HTTP 200.
+- Live Playwright: the full desktop and 390 px mobile suite passed, including
+  keyboard, axe, privacy, offline/update, response-policy, release-selection,
+  reduced-motion, and 200% text checks.
+- Live `/opt/fleet/lib/verify-url.sh`: HTTP 200, 872 ms, no console errors, and
+  all structural accessibility checks passed.
+- Local/live SHA-256 identity matched for `index.html`, both fingerprinted code
+  assets, `service-worker.js`, `install.sh`, and `install.ps1`. The live app
+  asset returns one-year immutable caching; the worker returns `no-cache`.
+- Live Lighthouse: performance 100, accessibility 100, best practices 100,
+  SEO 100; LCP 1.25 s; CLS 0; total transfer 142,009 bytes.
+- The live Sociobot verification endpoint returned HTTP 200 with
+  `{valid:false, reason:"invalid"}` for an invalid fixture and `no-store`.
 
-## Known gaps / operator action
+## Operator action
 
-- Publish `packaging/homebrew/sideload-readiness.rb` in `B-Divyesh/homebrew-sideload-readiness` and submit the checked winget manifests to `microsoft/winget-pkgs`.
-- macOS and Windows artifacts remain intentionally unsigned. Signing requires owner-provided Apple and Windows certificates; no secrets belong in this repository.
-- The historical `v0.1.0` release includes a few harmless internal staging files. The repaired workflow excludes them from future releases; all required `v0.1.0` assets and checksums are valid.
-- Android does not expose complete recovery-sideload state while running. The CLI continues to mark it `needs-review` and directs users to device-maker guidance.
+- Publish the updated formula in `packaging/homebrew/sideload-readiness.rb` to
+  `B-Divyesh/homebrew-sideload-readiness` and submit the 0.1.1 `winget/`
+  manifests to `microsoft/winget-pkgs`.
+- macOS and Windows packages remain intentionally unsigned. Signing requires
+  owner-provided Apple and Windows certificates; no secrets are stored here.
+- Android cannot expose complete recovery-sideload state while running. The
+  CLI honestly marks it `needs-review` and points to device-maker guidance.
