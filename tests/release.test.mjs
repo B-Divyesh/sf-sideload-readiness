@@ -41,19 +41,21 @@ test('@claim:verified-installer the shell installer handles GitHub release JSON 
   const fixtures = join(temporary, 'fixtures');
   const fakeBin = join(temporary, 'bin');
   const archiveRoot = join(temporary, 'archive');
-  const home = join(temporary, 'home');
-  await Promise.all([mkdir(fixtures), mkdir(fakeBin), mkdir(archiveRoot), mkdir(home)]);
+  await Promise.all([mkdir(fixtures), mkdir(fakeBin), mkdir(archiveRoot)]);
   const binary = join(archiveRoot, 'sideload-readiness');
   await writeFile(binary, '#!/bin/sh\necho "sideload-readiness fixture"\n');
   await chmod(binary, 0o755);
-  const asset = 'sideload-readiness-linux-x86_64.tar.gz';
-  await exec('tar', ['-C', archiveRoot, '-czf', join(fixtures, asset), 'sideload-readiness']);
-  const archive = await readFile(join(fixtures, asset));
-  const digest = createHash('sha256').update(archive).digest('hex');
-  await writeFile(join(fixtures, 'SHA256SUMS'), `${digest}  ${asset}\n`);
+  const assets = ['sideload-readiness-linux-x86_64.tar.gz', 'sideload-readiness-macos-aarch64.tar.gz'];
+  for (const asset of assets) await exec('tar', ['-C', archiveRoot, '-czf', join(fixtures, asset), 'sideload-readiness']);
+  const checksumLines = [];
+  for (const asset of assets) {
+    const archive = await readFile(join(fixtures, asset));
+    checksumLines.push(`${createHash('sha256').update(archive).digest('hex')}  ${asset}`);
+  }
+  await writeFile(join(fixtures, 'SHA256SUMS'), `${checksumLines.join('\n')}\n`);
   await writeFile(join(fixtures, 'release.json'), JSON.stringify({
     tag_name: 'v0.1.0',
-    assets: [{ name: asset, browser_download_url: `https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.0/${asset}` }]
+    assets: assets.map(name => ({ name, browser_download_url: `https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.0/${name}` }))
   }, null, 2));
   const curl = join(fakeBin, 'curl');
   await writeFile(curl, `#!/bin/sh
@@ -70,18 +72,31 @@ done
 case "$url" in
   *api.github.com*) source="$FIXTURE_DIR/release.json" ;;
   */SHA256SUMS) source="$FIXTURE_DIR/SHA256SUMS" ;;
-  */${asset}) source="$FIXTURE_DIR/${asset}" ;;
+  */*.tar.gz) source="$FIXTURE_DIR/\${url##*/}" ;;
   *) echo "Unexpected URL: $url" >&2; exit 8 ;;
 esac
 if [ -n "$output" ]; then cp "$source" "$output"; else command cat "$source"; fi
 `);
   await chmod(curl, 0o755);
+  const uname = join(fakeBin, 'uname');
+  await writeFile(uname, `#!/bin/sh
+case "$1" in
+  -s) printf '%s\n' "$MOCK_OS" ;;
+  -m) printf '%s\n' "$MOCK_ARCH" ;;
+  *) exit 2 ;;
+esac
+`);
+  await chmod(uname, 0o755);
   try {
-    const { stdout } = await exec('sh', [new URL('../site/install.sh', import.meta.url).pathname], {
-      env: { ...process.env, HOME: home, FIXTURE_DIR: fixtures, PATH: `${fakeBin}:${process.env.PATH}` }
-    });
-    assert.match(stdout, /SHA-256 verified/);
-    assert.match(await readFile(join(home, '.local/bin/sideload-readiness'), 'utf8'), /fixture/);
+    for (const [name, os, arch] of [['linux', 'Linux', 'x86_64'], ['macos', 'Darwin', 'arm64']]) {
+      const home = join(temporary, `home-${name}`);
+      await mkdir(home);
+      const { stdout } = await exec('sh', [new URL('../site/install.sh', import.meta.url).pathname], {
+        env: { ...process.env, HOME: home, FIXTURE_DIR: fixtures, MOCK_OS: os, MOCK_ARCH: arch, PATH: `${fakeBin}:${process.env.PATH}` }
+      });
+      assert.match(stdout, /SHA-256 verified/);
+      assert.match(await readFile(join(home, '.local/bin/sideload-readiness'), 'utf8'), /fixture/);
+    }
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }
@@ -117,19 +132,23 @@ test('latest.json contains real per-platform release asset URLs', async () => {
 
 test('packaging metadata keeps the CLI identity and version', async () => {
   const cargo = await read('Cargo.toml');
-  const winget = await read('winget/Sociobot.SideloadReadiness/0.1.0/Sociobot.SideloadReadiness.yaml');
-  const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.0/Sociobot.SideloadReadiness.installer.yaml');
-  const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.0/Sociobot.SideloadReadiness.locale.en-US.yaml');
+  const winget = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.yaml');
+  const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.installer.yaml');
+  const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.locale.en-US.yaml');
   const scoop = await read('scoop-bucket/sideload-readiness.json');
   const brew = await read('packaging/homebrew/sideload-readiness.rb');
   assert.match(cargo, /name = "sideload-readiness"/);
   assert.match(cargo, /version = "0\.1\.1"/);
-  assert.match(winget, /PackageVersion: 0\.1\.0/);
+  assert.match(winget, /PackageVersion: 0\.1\.1/);
   assert.match(winget, /ManifestType: version/);
   assert.match(wingetInstaller, /ManifestType: installer/);
   assert.match(wingetInstaller, /sideload-readiness-windows-x86_64\.zip/);
+  assert.match(wingetInstaller, /c01caee6006897c1296d52f44698a8affc8234ad91260eee91c7446ea96769ee/);
   assert.match(wingetLocale, /ManifestType: defaultLocale/);
-  assert.match(scoop, /"version": "0\.1\.0"/);
+  assert.match(scoop, /"version": "0\.1\.1"/);
+  assert.match(scoop, /"hash": "c01caee6006897c1296d52f44698a8affc8234ad91260eee91c7446ea96769ee"/);
   assert.match(brew, /on_arm do/);
   assert.match(brew, /on_intel do/);
+  assert.match(brew, /e999964dbe1f06631c341091ad215bdffb907e98d634d9095783babdf32f2fe8/);
+  assert.match(brew, /c9b8e7bcaca39c3e8b0c4877d5872526e18ba98855be24c574ff4fb089730bf2/);
 });
