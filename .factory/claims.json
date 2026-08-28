@@ -1,72 +1,16 @@
 [
-  {
-    "id": "demo-report",
-    "claim": "The sample command produces a redacted readiness report with an actionable recovery checklist.",
-    "where": "Demo page and README",
-    "test": "cargo test --test cli claim_demo_report_public_command -- --exact",
-    "sandbox": "Run the public demo command in a fresh process and inspect its Markdown output file."
-  },
-  {
-    "id": "json-report",
-    "claim": "The public demo command writes a machine-readable sideload-readiness/v1 JSON report.",
-    "where": "README usage",
-    "test": "cargo test --test cli claim_json_report_public_demo_command -- --exact",
-    "sandbox": "Run the public demo command with --json --output and parse the resulting file."
-  },
-  {
-    "id": "redacted-id",
-    "claim": "Exported device reports replace the real hardware serial with a redacted ID.",
-    "where": "Landing facts, Privacy, and README",
-    "test": "cargo test --test cli claim_redacted_id_public_check_command -- --exact",
-    "sandbox": "Run the public check command against a fake adb device with a known serial; assert the serial is absent from JSON output."
-  },
-  {
-    "id": "read-only-adb",
-    "claim": "Device checks use read-only adb queries and do not install apps, unlock devices, or change Android settings.",
-    "where": "Landing page and README",
-    "test": "cargo test --test cli claim_read_only_adb_public_check_command -- --exact",
-    "sandbox": "Run the public check command against a recording adb fixture and reject every mutating command."
-  },
-  {
-    "id": "free-single-device",
-    "claim": "A single-device readiness check runs without a paid license.",
-    "where": "Landing facts, fleet section, and README",
-    "test": "cargo test --test cli claim_single_device_check_needs_no_license -- --exact",
-    "sandbox": "Run the public check command against one fake device with no license environment value."
-  },
-  {
-    "id": "local-demo",
-    "claim": "The browser demo uses sample data only in its separate demo storage namespace.",
-    "where": "Demo banner, demo documentation, and README",
-    "test": "npm run test:browser -- --project=chromium --grep='@claim:local-demo'",
-    "sandbox": "Fresh browser context; reset and reload the demo; assert the only storage key is demo:sideload-readiness."
-  },
-  {
-    "id": "privacy",
-    "claim": "The site loads no third-party runtime scripts or passive third-party requests.",
-    "where": "Privacy page and README",
-    "test": "npm run test:browser -- --project=chromium --grep='@claim:privacy'",
-    "sandbox": "Fresh browser context; intercept all landing, demo, privacy, and terms requests and allow only same-origin traffic."
-  },
-  {
-    "id": "installer-checksum",
-    "claim": "The Linux and macOS installer resolves GitHub's release JSON, verifies SHA-256, and installs the matching archive.",
-    "where": "Install section and README",
-    "test": "node --test --test-name-pattern='@claim:installer-checksum' tests/release.test.mjs",
-    "sandbox": "Execute the shell installer with a realistic GitHub API fixture, local release archive, and matching checksum in a temporary HOME."
-  },
-  {
-    "id": "release-platforms",
-    "claim": "Releases provide direct asset URLs for Linux, macOS arm64/x64, and Windows.",
-    "where": "Install section and README",
-    "test": "node --test --test-name-pattern='@claim:release-platforms' tests/release.test.mjs",
-    "sandbox": "Generate latest.json for a fixture release and validate every platform entry as an absolute GitHub asset URL."
-  },
-  {
-    "id": "fleet-local",
-    "claim": "A valid fleet license adds a local report queue and package-status table in the browser.",
-    "where": "Fleet section and README",
-    "test": "npm run test:browser -- --project=chromium --grep='@claim:fleet-local'",
-    "sandbox": "Mock a valid Sociobot verdict, upload a redacted report through the UI, and assert it is rendered and stored locally."
-  }
+  {"id":"demo-report","claim":"The sample command produces a redacted readiness report with six findings and a recovery checklist.","where":"Demo page and README","test":"cargo test --test cli claim_demo_report_is_redacted_and_actionable -- --exact","sandbox":"Run the public CLI demo command in a fresh temporary path and parse its report."},
+  {"id":"json-report","claim":"The public demo command can write a machine-readable JSON report.","where":"README usage","test":"cargo test --test cli claim_demo_json_is_machine_readable -- --exact","sandbox":"Run the public CLI with demo --json --output and parse the emitted JSON."},
+  {"id":"redacted-id","claim":"Exported device reports replace the adb hardware serial with a redacted ID.","where":"Landing facts, privacy page, and README","test":"cargo test --test cli claim_exported_device_id_is_redacted -- --exact","sandbox":"Run the public check command against a fake adb device with a known serial; assert the exported JSON omits it."},
+  {"id":"read-only-checks","claim":"Device checks use read-only adb queries and have no install, sideload, unlock, settings-write, or report-upload command.","where":"Landing page, privacy page, and README","test":"cargo test --test cli claim_device_checks_are_read_only_and_non_mutating -- --exact","sandbox":"Run the public check command with a logging fake adb, allowlist every adb operation, and inspect the public help."},
+  {"id":"unauthorized-device","claim":"The command refuses an unauthorized Android device and prints a next step.","where":"Landing how-it-works section","test":"cargo test --test cli claim_unauthorized_devices_are_refused_with_a_next_step -- --exact","sandbox":"Run the public check command against fake adb output containing only an unauthorized device."},
+  {"id":"demo-no-adb","claim":"The CLI demo does not connect to adb and writes its sample report to a temporary path.","where":"README and demo documentation","test":"cargo test --test cli claim_demo_uses_no_adb_and_writes_a_temporary_report -- --exact","sandbox":"Run the public demo with a deliberately missing adb path; inspect and remove the reported temporary file."},
+  {"id":"single-device-free","claim":"A single-device readiness check works without a fleet license.","where":"Landing facts and README","test":"cargo test --test cli claim_single_device_check_is_free -- --exact","sandbox":"Run the public one-device demo command without any license or account state."},
+  {"id":"local-demo","claim":"The browser demo stores only sample data in its separate demo namespace.","where":"Demo banner and README","test":"npm run test:browser -- --project=chromium --grep '@claim:local-demo'","sandbox":"Fresh browser context; reset and reload the demo; assert its only storage key is demo:sideload-readiness."},
+  {"id":"privacy","claim":"The browser demo makes only same-origin requests and loads no third-party runtime code.","where":"Privacy page and README","test":"npm run test:browser -- --project=chromium --grep '@claim:privacy'","sandbox":"Intercept every request throughout the fresh demo flow and assert that each origin is the product origin."},
+  {"id":"fleet-review","claim":"A $39 one-time fleet license adds a local redacted-report queue and package-status table.","where":"Landing paid section and README","test":"npm run test:browser -- --project=chromium --grep '@claim:fleet-review'","sandbox":"Seed a valid cached fixture verdict, upload a redacted sample report, and observe the local queue table."},
+  {"id":"license-verification","claim":"License verification sends the pasted token to the Sociobot product endpoint only after submit.","where":"Landing paid section and privacy page","test":"npm run test:browser -- --project=chromium --grep '@claim:license-verification'","sandbox":"Route the Sociobot verification endpoint, submit a fixture token, and assert the exact request and result."},
+  {"id":"verified-installer","claim":"The Linux and macOS installer resolves the current release, verifies SHA-256, and installs the matching binary.","where":"Landing install section and README","test":"npm run test:unit -- --test-name-pattern='@claim:verified-installer'","sandbox":"Use realistic spaced GitHub release JSON plus a real fixture tarball and checksum in an isolated HOME."},
+  {"id":"platform-packaging","claim":"Release automation packages the CLI for Linux, macOS arm64 and x64, and Windows x64.","where":"README install section","test":"npm run test:unit -- --test-name-pattern='@claim:platform-packaging'","sandbox":"Inspect the release workflow matrix and required package outputs from a fresh clone."},
+  {"id":"release-manifest","claim":"latest.json provides an absolute download URL for every supported platform.","where":"Release artifact contract","test":"npm run test:unit -- --test-name-pattern='@claim:release-manifest'","sandbox":"Generate the manifest from a complete fixture asset directory and validate every platform URL."}
 ]

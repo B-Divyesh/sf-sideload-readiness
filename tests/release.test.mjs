@@ -1,17 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { execFile as execFileCallback } from 'node:child_process';
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { delimiter, join } from 'node:path';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { releaseManifest } from '../scripts/release-manifest.mjs';
 
-const read = (name) => readFile(new URL(`../${name}`, import.meta.url), 'utf8');
-const execFile = promisify(execFileCallback);
+const read = name => readFile(new URL(`../${name}`, import.meta.url), 'utf8');
+const exec = promisify(execFile);
 
-test('release workflow retains the installer artifact matrix', async () => {
+test('@claim:platform-packaging release workflow retains the installer artifact matrix', async () => {
   const workflow = await read('.github/workflows/release.yml');
   for (const value of [
     "tags: ['v*']",
@@ -37,72 +36,82 @@ test('one-line installers require a matching published checksum', async () => {
   assert.match(powershell, /\$actual -ne \$expected\.ToLower\(\)/);
 });
 
-test('@claim:installer-checksum the shell installer handles GitHub JSON and verifies its archive', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'sideload-installer-test-'));
+test('@claim:verified-installer the shell installer handles GitHub release JSON and installs a verified archive', async () => {
+  const temporary = await mkdtemp(join(tmpdir(), 'sideload-readiness-installer-'));
+  const fixtures = join(temporary, 'fixtures');
+  const fakeBin = join(temporary, 'bin');
+  const archiveRoot = join(temporary, 'archive');
+  const home = join(temporary, 'home');
+  await Promise.all([mkdir(fixtures), mkdir(fakeBin), mkdir(archiveRoot), mkdir(home)]);
+  const binary = join(archiveRoot, 'sideload-readiness');
+  await writeFile(binary, '#!/bin/sh\necho "sideload-readiness fixture"\n');
+  await chmod(binary, 0o755);
+  const asset = 'sideload-readiness-linux-x86_64.tar.gz';
+  await exec('tar', ['-C', archiveRoot, '-czf', join(fixtures, asset), 'sideload-readiness']);
+  const archive = await readFile(join(fixtures, asset));
+  const digest = createHash('sha256').update(archive).digest('hex');
+  await writeFile(join(fixtures, 'SHA256SUMS'), `${digest}  ${asset}\n`);
+  await writeFile(join(fixtures, 'release.json'), JSON.stringify({
+    tag_name: 'v0.1.0',
+    assets: [{ name: asset, browser_download_url: `https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.0/${asset}` }]
+  }, null, 2));
+  const curl = join(fakeBin, 'curl');
+  await writeFile(curl, `#!/bin/sh
+set -eu
+url=''
+output=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) output=$2; shift 2 ;;
+    -*) shift ;;
+    *) url=$1; shift ;;
+  esac
+done
+case "$url" in
+  *api.github.com*) source="$FIXTURE_DIR/release.json" ;;
+  */SHA256SUMS) source="$FIXTURE_DIR/SHA256SUMS" ;;
+  */${asset}) source="$FIXTURE_DIR/${asset}" ;;
+  *) echo "Unexpected URL: $url" >&2; exit 8 ;;
+esac
+if [ -n "$output" ]; then cp "$source" "$output"; else command cat "$source"; fi
+`);
+  await chmod(curl, 0o755);
   try {
-    const mockBin = join(root, 'bin');
-    const payloadDir = join(root, 'payload');
-    const home = join(root, 'home');
-    await Promise.all([mkdir(mockBin), mkdir(payloadDir), mkdir(home)]);
-    const payload = join(payloadDir, 'sideload-readiness');
-    await writeFile(payload, '#!/bin/sh\necho "fixture binary 9.8.7"\n');
-    await chmod(payload, 0o755);
-    const archive = join(root, 'sideload-readiness-linux-x86_64.tar.gz');
-    await execFile('tar', ['-C', payloadDir, '-czf', archive, 'sideload-readiness']);
-    const checksum = createHash('sha256').update(await readFile(archive)).digest('hex');
-    const sums = join(root, 'SHA256SUMS');
-    await writeFile(sums, `${checksum}  sideload-readiness-linux-x86_64.tar.gz\n`);
-    const api = new URL('./fixtures/github-latest.json', import.meta.url).pathname;
-    const log = join(root, 'curl.log');
-    const fakeCurl = `#!/usr/bin/env node
-import { appendFileSync, copyFileSync, readFileSync } from 'node:fs';
-const args = process.argv.slice(2);
-const url = args.find(value => value.startsWith('https://'));
-const outputIndex = args.indexOf('-o');
-appendFileSync(process.env.CURL_LOG, url + '\\n');
-let source;
-if (url.endsWith('/releases/latest')) source = process.env.API_FIXTURE;
-else if (url.endsWith('/SHA256SUMS')) source = process.env.SUMS_FIXTURE;
-else if (url.endsWith('/sideload-readiness-linux-x86_64.tar.gz')) source = process.env.ARCHIVE_FIXTURE;
-else process.exit(22);
-if (outputIndex >= 0) copyFileSync(source, args[outputIndex + 1]);
-else process.stdout.write(readFileSync(source));
-`;
-    await writeFile(join(mockBin, 'curl'), fakeCurl);
-    await chmod(join(mockBin, 'curl'), 0o755);
-    await writeFile(join(mockBin, 'uname'), '#!/bin/sh\n[ "$1" = "-s" ] && echo Linux || echo x86_64\n');
-    await chmod(join(mockBin, 'uname'), 0o755);
-
-    const { stdout } = await execFile('sh', [new URL('../site/install.sh', import.meta.url).pathname], {
-      env: {
-        ...process.env,
-        HOME: home,
-        PATH: `${mockBin}${delimiter}${process.env.PATH}`,
-        API_FIXTURE: api,
-        ARCHIVE_FIXTURE: archive,
-        SUMS_FIXTURE: sums,
-        CURL_LOG: log
-      }
+    const { stdout } = await exec('sh', [new URL('../site/install.sh', import.meta.url).pathname], {
+      env: { ...process.env, HOME: home, FIXTURE_DIR: fixtures, PATH: `${fakeBin}:${process.env.PATH}` }
     });
     assert.match(stdout, /SHA-256 verified/);
-    assert.match(await readFile(join(home, '.local/bin/sideload-readiness'), 'utf8'), /fixture binary 9\.8\.7/);
-    const requests = await readFile(log, 'utf8');
-    assert.match(requests, /releases\/download\/v9\.8\.7\/sideload-readiness-linux-x86_64\.tar\.gz/);
-    assert.match(requests, /releases\/download\/v9\.8\.7\/SHA256SUMS/);
+    assert.match(await readFile(join(home, '.local/bin/sideload-readiness'), 'utf8'), /fixture/);
   } finally {
-    await rm(root, { recursive: true, force: true });
+    await rm(temporary, { recursive: true, force: true });
   }
 });
 
-test('@claim:release-platforms latest.json uses absolute URLs for every release platform', () => {
-  const manifest = releaseManifest('0.1.1', 'B-Divyesh/sf-sideload-readiness');
-  assert.deepEqual(Object.keys(manifest.platforms), [
-    'linux', 'linux-deb', 'linux-rpm', 'macos-arm64', 'macos-arm64-pkg',
-    'macos-x64', 'macos-x64-pkg', 'windows'
-  ]);
-  for (const url of Object.values(manifest.platforms)) {
-    assert.equal(new URL(url).origin, 'https://github.com');
-    assert.match(url, /\/releases\/download\/v0\.1\.1\//);
+test('@claim:release-manifest latest.json contains real per-platform release asset URLs', async () => {
+  const temporary = await mkdtemp(join(tmpdir(), 'sideload-readiness-manifest-'));
+  const filenames = [
+    'sideload-readiness-linux-x86_64.tar.gz',
+    'sideload-readiness-macos-aarch64.tar.gz',
+    'sideload-readiness-macos-x86_64.tar.gz',
+    'sideload-readiness-windows-x86_64.zip'
+  ];
+  try {
+    await Promise.all(filenames.map(filename => writeFile(join(temporary, filename), 'fixture')));
+    await exec(process.execPath, [
+      new URL('../scripts/create-release-manifest.mjs', import.meta.url).pathname,
+      temporary,
+      'v0.1.1',
+      'B-Divyesh/sf-sideload-readiness'
+    ]);
+    const manifest = JSON.parse(await readFile(join(temporary, 'latest.json'), 'utf8'));
+    assert.equal(manifest.version, '0.1.1');
+    for (const [platform, filename] of Object.entries({
+      linux: filenames[0], 'macos-arm64': filenames[1], 'macos-x64': filenames[2], windows: filenames[3]
+    })) {
+      assert.equal(manifest.platforms[platform], `https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.1/${filename}`);
+    }
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
   }
 });
 

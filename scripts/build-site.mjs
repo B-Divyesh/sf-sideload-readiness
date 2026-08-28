@@ -8,33 +8,38 @@ await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 await cp(resolve(root, 'site'), out, { recursive: true });
 
-const assets = resolve(out, 'assets');
-await mkdir(assets);
-const fingerprint = async name => {
-  const sourcePath = resolve(out, name);
-  const body = await readFile(sourcePath);
+const assetDirectory = resolve(out, 'assets');
+await mkdir(assetDirectory);
+const emitted = {};
+for (const name of ['app.js', 'style.css']) {
+  const contents = await readFile(resolve(out, name));
   const extension = name.slice(name.lastIndexOf('.'));
-  const stem = name.slice(0, -extension.length);
-  const hash = createHash('sha256').update(body).digest('hex').slice(0, 12);
-  const fingerprinted = `${stem}.${hash}${extension}`;
-  await writeFile(resolve(assets, fingerprinted), body);
-  await rm(sourcePath);
-  return `/assets/${fingerprinted}`;
-};
-
-const style = await fingerprint('style.css');
-const app = await fingerprint('app.js');
-for (const page of ['index.html', '404.html']) {
-  const path = resolve(out, page);
-  const html = (await readFile(path, 'utf8'))
-    .replaceAll('/style.css', style)
-    .replaceAll('/app.js', app);
-  await writeFile(path, html);
+  const stem = name.slice(0, name.lastIndexOf('.'));
+  const digest = createHash('sha256').update(contents).digest('hex').slice(0, 12);
+  emitted[name] = `/assets/${stem}.${digest}${extension}`;
+  await writeFile(resolve(out, emitted[name].slice(1)), contents);
+  await rm(resolve(out, name));
 }
+
+const htmlPath = resolve(out, 'index.html');
+const html = (await readFile(htmlPath, 'utf8'))
+  .replace('/style.css', emitted['style.css'])
+  .replace('/app.js', emitted['app.js']);
+await writeFile(htmlPath, html);
+const notFoundPath = resolve(out, '404.html');
+const notFound = (await readFile(notFoundPath, 'utf8'))
+  .replace('/style.css', emitted['style.css']);
+await writeFile(notFoundPath, notFound);
+
 const workerPath = resolve(out, 'service-worker.js');
+const assetVersion = createHash('sha256')
+  .update(`${emitted['app.js']}:${emitted['style.css']}`)
+  .digest('hex')
+  .slice(0, 12);
 const worker = (await readFile(workerPath, 'utf8'))
-  .replaceAll("'/app.js'", `'${app}'`)
-  .replaceAll("'/style.css'", `'${style}'`)
-  .replace('sideload-readiness-v3', `sideload-readiness-v3-${app.match(/[a-f0-9]{12}/)[0]}`);
+  .replace('__ASSET_VERSION__', assetVersion)
+  .replace("'/app.js'", `'${emitted['app.js']}'`)
+  .replace("'/style.css'", `'${emitted['style.css']}'`);
 await writeFile(workerPath, worker);
-console.log('Built static site to dist/site');
+
+console.log(`Built static site to dist/site with immutable assets ${emitted['app.js']} and ${emitted['style.css']}`);

@@ -4,14 +4,6 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing or new release tag
-        required: true
-        default: v0.1.1
-
-env:
-  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 permissions:
   contents: write
@@ -53,13 +45,17 @@ jobs:
           tar -C out -czf out/sideload-readiness-${{ matrix.label }}.tar.gz sideload-readiness
       - name: Package macOS pkg
         if: runner.os == 'macOS'
-        run: pkgbuild --root out/root --identifier in.sociobot.sideload-readiness --version ${RELEASE_TAG#v} out/sideload-readiness-${{ matrix.label }}.pkg
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n1)
+          pkgbuild --root out/root --identifier in.sociobot.sideload-readiness --version "$version" out/sideload-readiness-${{ matrix.label }}.pkg
       - name: Package Linux deb and rpm
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n1)
           mkdir -p out/deb/DEBIAN
-          printf 'Package: sideload-readiness\nVersion: %s\nArchitecture: amd64\nMaintainer: Param Factory\nDescription: Read-only Android sideload readiness checks\n' "${RELEASE_TAG#v}" > out/deb/DEBIAN/control
+          printf 'Package: sideload-readiness\nVersion: %s\nArchitecture: amd64\nMaintainer: Param Factory\nDescription: Read-only Android sideload readiness checks\n' "$version" > out/deb/DEBIAN/control
           mkdir -p out/deb/usr/local/bin
           cp out/sideload-readiness out/deb/usr/local/bin/
           dpkg-deb --build out/deb out/sideload-readiness-linux-x86_64.deb
@@ -91,6 +87,17 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: release
+      - name: Resolve release tag
+        id: release
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n1)
+          tag="v$version"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "$tag" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match Cargo version $version." >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Build release manifest and checksums
         shell: bash
         run: |
@@ -98,11 +105,10 @@ jobs:
           find release -type f -exec cp {} assets/ \;
           cd assets
           find . -maxdepth 1 -type f ! -name SHA256SUMS ! -name latest.json -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS
-          tag="$RELEASE_TAG"
-          version="${tag#v}"
-          node ../scripts/release-manifest.mjs "$version" "$GITHUB_REPOSITORY" "$tag" > latest.json
+          cd ..
+          node scripts/create-release-manifest.mjs assets "${{ steps.release.outputs.tag }}" "$GITHUB_REPOSITORY"
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ steps.release.outputs.tag }}
           files: assets/*
           generate_release_notes: true

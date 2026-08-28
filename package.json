@@ -6,9 +6,8 @@
     "build": "npm run build:site",
     "build:site": "node scripts/build-site.mjs",
     "test": "npm run test:unit && npm run test:browser",
-    "test:unit": "node --test",
-    "test:browser": "playwright test",
-    "test:browser:production": "npm run build:site && SITE_ROOT=dist/site playwright test",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:browser": "npm run build:site && SITE_ROOT=dist/site playwright test",
     "dev": "node scripts/serve.mjs"
   },
   "devDependencies": {

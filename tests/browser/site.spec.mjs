@@ -14,6 +14,20 @@ test('landing page has one clear primary route and no console errors', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('production responses enforce policy and cache fingerprinted assets immutably', async ({ page }) => {
+  const response = await page.goto('/');
+  expect(response.headers()['content-security-policy']).toContain("default-src 'self'");
+  const assetUrls = await page.locator('link[rel="stylesheet"], script[src]').evaluateAll(elements => elements.map(element => element.href || element.src));
+  expect(assetUrls).toHaveLength(2);
+  for (const url of assetUrls) {
+    expect(url).toMatch(/\/assets\/(?:app|style)\.[a-f0-9]{12}\.(?:js|css)$/);
+    const assetResponse = await page.request.get(url);
+    expect(assetResponse.headers()['cache-control']).toBe('public, max-age=31536000, immutable');
+  }
+  const workerResponse = await page.request.get('/service-worker.js');
+  expect(workerResponse.headers()['cache-control']).toBe('no-cache');
+});
+
 test('keyboard navigation reaches the demo and reset controls', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Tab');
@@ -78,26 +92,38 @@ test('@claim:privacy page loads and the full demo flow make no third-party reque
   await page.goto('/privacy');
   await page.goto('/terms');
   expect(external).toEqual([]);
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual(['demo:sideload-readiness']);
 });
 
-test('@claim:fleet-local a valid license enables a browser-local report queue', async ({ page }) => {
-  await page.route('https://api.sociobot.in/api/v1/products/sideload-readiness/verify?license=fixture-license', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: { 'access-control-allow-origin': '*' },
-    body: JSON.stringify({ valid: true, reason: 'ok', expires_at: null })
-  }));
+test('@claim:fleet-review a cached valid license enables the local report queue', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:sideload-readiness', 'fixture-license');
+    localStorage.setItem('sb_license_verdict:sideload-readiness', JSON.stringify({ valid: true, checked_at: Date.now() }));
+  });
   await page.goto('/');
-  await page.getByLabel('Have a license? Paste it here.').fill('fixture-license');
-  await page.getByRole('button', { name: 'Verify fleet license' }).click();
-  await expect(page.getByText('Fleet review is active on this browser.')).toBeVisible();
+  await expect(page.locator('.price')).toContainText('$39');
+  await expect(page.getByRole('link', { name: 'Buy fleet review' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/sideload-readiness/checkout');
+  await expect(page.getByLabel('Add redacted JSON reports')).toBeVisible();
   await page.getByLabel('Add redacted JSON reports').setInputFiles({
     name: 'sample-report.json',
     mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify({ schema: 'sideload-readiness/v1', device: { id: 'device-redacted', android: '15' }, score: 83 }))
+    buffer: Buffer.from(JSON.stringify({ schema: 'sideload-readiness/v1', device: { id: 'device-test', android: '15' }, score: 83 }))
   });
   await expect(page.getByText('1 local report queued.')).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem('fleet:reports'))).toContain('device-redacted');
+  await expect(page.getByRole('cell', { name: 'device-test' })).toBeVisible();
+});
+
+test('@claim:license-verification sends a pasted token only to Sociobot on submit', async ({ page }) => {
+  let requested;
+  await page.route('https://api.sociobot.in/api/v1/products/sideload-readiness/verify?**', async route => {
+    requested = route.request().url();
+    await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ valid: true, reason: 'ok' }) });
+  });
+  await page.goto('/');
+  await page.getByLabel('Have a license? Paste it here.').fill('fixture license');
+  await page.getByRole('button', { name: 'Verify fleet license' }).click();
+  await expect(page.locator('#license-status')).toHaveText('Fleet review is active on this browser.');
+  expect(requested).toBe('https://api.sociobot.in/api/v1/products/sideload-readiness/verify?license=fixture%20license');
 });
 
 test('service worker activates and the demo reloads offline', async ({ page, context }) => {
