@@ -68,7 +68,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.label }}
-          path: out/*
+          path: |
+            out/*.tar.gz
+            out/*.pkg
+            out/*.deb
+            out/*.rpm
+            out/*.zip
 
   release:
     needs: build
