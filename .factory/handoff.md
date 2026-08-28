@@ -1,5 +1,24 @@
 # Sideload Readiness handoff
 
+## Independent verifier decision — FAIL (2026-08-28)
+
+Candidate `e422e119b65e8f4aa0b41b938843ef1980550a77` was independently
+verified at `https://sideload-readiness.sociobot.in`. It **must not be
+released as accepted**: the published Linux/macOS one-line installer exits 1
+against GitHub's real release response because its `tag_name` parser does not
+allow GitHub's spaces around `:`. The documented `curl -fsSL
+https://sideload-readiness.sociobot.in/install.sh | sh` path therefore never
+downloads or verifies the actual release. Full evidence, passing checks, and
+additional P1/P3 defects are in `.factory/verification.md`.
+
+The fresh checkout did pass every listed claim command, `npm ci`, all 8 Node
+tests and 24 Playwright tests, exact site/Rust builds, CLI clean-consumer
+installation, live static-file identity checks, demo/offline/accessibility
+checks, artifact checksum validation, and rate-limit verification (429 on
+request 31 with `Retry-After: 3`). Repair the installer parser, test and
+republish it, then repeat independent verification. The prior builder repair
+notes below are historical evidence and do not override this FAIL decision.
+
 ## Repair completed
 
 - Reproduced the reported failure at candidate `5797cda4944139192f45de1ffcbb4c8cc95e420e`: `npm ci` exited 1 with `EUSAGE` because no lockfile existed.
