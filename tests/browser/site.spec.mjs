@@ -14,6 +14,20 @@ test('landing page has one clear primary route and no console errors', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('production responses enforce policy and cache fingerprinted assets immutably', async ({ page }) => {
+  const response = await page.goto('/');
+  expect(response.headers()['content-security-policy']).toContain("default-src 'self'");
+  const assetUrls = await page.locator('link[rel="stylesheet"], script[src]').evaluateAll(elements => elements.map(element => element.href || element.src));
+  expect(assetUrls).toHaveLength(2);
+  for (const url of assetUrls) {
+    expect(url).toMatch(/\/assets\/(?:app|style)\.[a-f0-9]{12}\.(?:js|css)$/);
+    const assetResponse = await page.request.get(url);
+    expect(assetResponse.headers()['cache-control']).toBe('public, max-age=31536000, immutable');
+  }
+  const workerResponse = await page.request.get('/service-worker.js');
+  expect(workerResponse.headers()['cache-control']).toBe('no-cache');
+});
+
 test('keyboard navigation reaches the demo and reset controls', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Tab');

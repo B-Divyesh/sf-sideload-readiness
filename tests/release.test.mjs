@@ -123,7 +123,7 @@ test('packaging metadata keeps the CLI identity and version', async () => {
   const scoop = await read('scoop-bucket/sideload-readiness.json');
   const brew = await read('packaging/homebrew/sideload-readiness.rb');
   assert.match(cargo, /name = "sideload-readiness"/);
-  assert.match(cargo, /version = "0\.1\.0"/);
+  assert.match(cargo, /version = "0\.1\.1"/);
   assert.match(winget, /PackageVersion: 0\.1\.0/);
   assert.match(winget, /ManifestType: version/);
   assert.match(wingetInstaller, /ManifestType: installer/);

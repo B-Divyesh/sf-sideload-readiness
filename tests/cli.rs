@@ -101,7 +101,9 @@ esac
 "#,
     )
     .expect("mock adb is written");
-    let mut permissions = fs::metadata(&adb_path).expect("mock adb metadata").permissions();
+    let mut permissions = fs::metadata(&adb_path)
+        .expect("mock adb metadata")
+        .permissions();
     permissions.set_mode(0o755);
     fs::set_permissions(&adb_path, permissions).expect("mock adb is executable");
     let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
@@ -147,8 +149,18 @@ fn claim_device_checks_are_read_only_and_non_mutating() {
     assert!(commands.contains("shell settings get"));
     assert!(commands.contains("shell df -k /data"));
     assert!(commands.contains("shell dumpsys package"));
-    for forbidden in [" install", " sideload", " reboot", " unlock", " settings put", " push "] {
-        assert!(!commands.contains(forbidden), "unexpected adb operation: {forbidden}");
+    for forbidden in [
+        " install",
+        " sideload",
+        " reboot",
+        " unlock",
+        " settings put",
+        " push ",
+    ] {
+        assert!(
+            !commands.contains(forbidden),
+            "unexpected adb operation: {forbidden}"
+        );
     }
     let help = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
         .arg("--help")
@@ -156,7 +168,10 @@ fn claim_device_checks_are_read_only_and_non_mutating() {
         .expect("help command starts");
     let help = String::from_utf8(help.stdout).expect("help is utf-8");
     for unavailable in ["  install", "  unlock", "  upload"] {
-        assert!(!help.contains(unavailable), "unexpected public command: {unavailable}");
+        assert!(
+            !help.contains(unavailable),
+            "unexpected public command: {unavailable}"
+        );
     }
     fs::remove_file(adb_path).expect("mock adb can be removed");
     fs::remove_file(log_path).expect("mock log can be removed");
@@ -173,7 +188,9 @@ fn claim_unauthorized_devices_are_refused_with_a_next_step() {
         "#!/bin/sh\nprintf 'List of devices attached\\nREAL-SERIAL-123\\tunauthorized\\n'\n",
     )
     .expect("mock adb is written");
-    let mut permissions = fs::metadata(&adb_path).expect("mock adb metadata").permissions();
+    let mut permissions = fs::metadata(&adb_path)
+        .expect("mock adb metadata")
+        .permissions();
     permissions.set_mode(0o755);
     fs::set_permissions(&adb_path, permissions).expect("mock adb is executable");
     let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))

@@ -50,10 +50,12 @@ test('production build fingerprints code assets and gives them immutable caching
     cwd: new URL('..', import.meta.url).pathname
   });
   const html = await getRoot('dist/site/index.html');
+  const notFound = await getRoot('dist/site/404.html');
   const assets = await readdir(new URL('../dist/site/assets', import.meta.url));
   const config = JSON.parse(await getRoot('dist/site/staticwebapp.config.json'));
   assert.match(html, /\/assets\/style\.[a-f0-9]{12}\.css/);
   assert.match(html, /\/assets\/app\.[a-f0-9]{12}\.js/);
+  assert.match(notFound, /\/assets\/style\.[a-f0-9]{12}\.css/);
   assert.equal(assets.length, 2);
   const immutable = config.routes.find(route => route.route === '/assets/*');
   assert.equal(immutable.headers['Cache-Control'], 'public, max-age=31536000, immutable');

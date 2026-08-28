@@ -26,6 +26,10 @@ const html = (await readFile(htmlPath, 'utf8'))
   .replace('/style.css', emitted['style.css'])
   .replace('/app.js', emitted['app.js']);
 await writeFile(htmlPath, html);
+const notFoundPath = resolve(out, '404.html');
+const notFound = (await readFile(notFoundPath, 'utf8'))
+  .replace('/style.css', emitted['style.css']);
+await writeFile(notFoundPath, notFound);
 
 const workerPath = resolve(out, 'service-worker.js');
 const assetVersion = createHash('sha256')
