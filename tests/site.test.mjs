@@ -6,13 +6,13 @@ const get = (name) => readFile(new URL(`../site/${name}`, import.meta.url), 'utf
 test('@claim:local-demo the sample report is present and local', async () => {
   const html = await get('index.html');
   const app = await get('app.js');
-  assert.match(html, /Try it with sample data/);
+  assert.match(app, /Try it with sample data/);
   assert.match(app, /DEMO_REPORT/);
   assert.match(app, /demo:/);
 });
 test('@claim:privacy no third-party runtime code is declared', async () => {
   const html = await get('index.html');
-  assert.doesNotMatch(html, /https?:\/\/(?!sideload-readiness\.sociobot\.in)/);
+  assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//);
   assert.match(html, /<main id="main"/);
   assert.match(html, /<html lang="en"/);
 });

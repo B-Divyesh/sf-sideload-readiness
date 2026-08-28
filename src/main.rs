@@ -19,6 +19,9 @@ struct Cli {
     /// Path to adb; defaults to adb on PATH
     #[arg(long, global = true, default_value = "adb")]
     adb: String,
+    /// Run the bundled sample without connecting a device
+    #[arg(long, global = true)]
+    demo: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -56,11 +59,13 @@ struct Device { id: String, android: String, usb_mode: String }
 
 fn main() {
     let cli = Cli::parse();
-    let result = match cli.command.unwrap_or(Commands::Check) {
-        Commands::Demo => demo_report(),
-        Commands::Check => connected_report(&cli.adb, cli.package.as_deref()),
-    };
+    let run_demo = cli.demo || matches!(cli.command, Some(Commands::Demo));
+    let result = if run_demo { demo_report() } else { connected_report(&cli.adb, cli.package.as_deref()) };
     match result {
+        Ok(report) if run_demo && cli.output.is_none() => {
+            let output = std::env::temp_dir().join(format!("sideload-readiness-demo-{}.md", now()));
+            emit(report, false, Some(output));
+        }
         Ok(report) => emit(report, cli.json, cli.output),
         Err(message) => {
             eprintln!("Could not make a readiness report: {message}\nNext step: connect one authorized Android device, then run `sideload-readiness check`.");
@@ -131,7 +136,7 @@ fn connected_report(adb_bin: &str, package: Option<&str>) -> Result<Report, Stri
     let package_dump = package.map(|p| adb(adb_bin, &["-s", serial, "shell", "dumpsys", "package", p]).unwrap_or_default());
     let signer_visible = package_dump.as_deref().map(|d| d.contains("SigningInfo") || d.contains("signatures=")).unwrap_or(false);
     let ab = prop("ro.build.ab_update") == "true" || !prop("ro.boot.slot_suffix").is_empty();
-    let mut findings = vec![
+    let findings = vec![
         finding("connection", "Authorized USB debugging", "ready", "adb reports an authorized device.", "Keep the device unlocked and authorized during maintenance."),
         finding("developer-options", "Developer options", if dev_enabled == "1" { "ready" } else { "needs-review" }, if dev_enabled == "1" { "Developer options are enabled." } else { "Developer options were not reported as enabled." }, "Enable Developer options only if your device policy permits it."),
         finding("usb-mode", "USB data mode", if usb_mode.contains("adb") { "ready" } else { "needs-review" }, format!("Current USB configuration: {usb_mode}."), "Choose a USB data mode and use a data-capable cable."),

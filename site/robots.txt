@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sideload-readiness.sociobot.in/sitemap.xml
