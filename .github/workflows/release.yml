@@ -53,8 +53,9 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n1)
           mkdir -p out/deb/DEBIAN
-          printf 'Package: sideload-readiness\nVersion: %s\nArchitecture: amd64\nMaintainer: Param Factory\nDescription: Read-only Android sideload readiness checks\n' "${GITHUB_REF_NAME#v}" > out/deb/DEBIAN/control
+          printf 'Package: sideload-readiness\nVersion: %s\nArchitecture: amd64\nMaintainer: Param Factory\nDescription: Read-only Android sideload readiness checks\n' "$version" > out/deb/DEBIAN/control
           mkdir -p out/deb/usr/local/bin
           cp out/sideload-readiness out/deb/usr/local/bin/
           dpkg-deb --build out/deb out/sideload-readiness-linux-x86_64.deb

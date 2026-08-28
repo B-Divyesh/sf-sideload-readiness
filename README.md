@@ -29,13 +29,13 @@ then place the binary on your PATH. Windows and macOS packages are unsigned
 until the operator supplies signing certificates. On macOS, use right-click
 then Open if Gatekeeper asks.
 
-After the first release, Homebrew users can install from the factory tap:
+The repository includes a Homebrew formula for the operator-managed tap:
 
 ```sh
 brew install B-Divyesh/sideload-readiness/sideload-readiness
 ```
 
-Scoop users can add this repository as a bucket:
+The repository also includes a Scoop manifest for the operator-managed bucket:
 
 ```powershell
 scoop bucket add sideload-readiness https://github.com/B-Divyesh/sf-sideload-readiness
@@ -70,7 +70,7 @@ sideload-readiness demo
 ```
 
 The sample writes its report to a new system temporary path and prints that
-path. A matching documented fixture ships at `examples/sample-report.json`.
+path. `examples/sample-report.json` documents its stable schema and values.
 
 The report checks:
 

@@ -85,16 +85,28 @@ test('reduced motion and 200% text preserve the report', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
 
-test('@claim:local-demo @claim:privacy demo stays in isolated storage and makes only same-origin requests', async ({ page }) => {
+test('@claim:local-demo the sample uses only its demo storage namespace', async ({ page }) => {
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await page.reload();
+  await expect(page.getByText('Demo — sample data, nothing is saved.')).toBeVisible();
+  const keys = await page.evaluate(() => Object.keys(localStorage));
+  expect(keys).toEqual(['demo:sideload-readiness']);
+  expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).toContain('device-6f31a0b2');
+});
+
+test('@claim:privacy page loads and the full demo flow make no third-party requests', async ({ page }) => {
   const external = [];
   const productOrigin = new URL(process.env.BASE_URL || 'http://127.0.0.1:4173').origin;
   page.on('request', request => {
     if (new URL(request.url()).origin !== productOrigin) external.push(request.url());
   });
+  await page.goto('/');
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await page.reload();
-  await expect(page.getByText('Demo — sample data, nothing is saved.')).toBeVisible();
+  await page.goto('/privacy');
+  await page.goto('/terms');
   expect(external).toEqual([]);
   expect(await page.evaluate(() => Object.keys(localStorage))).toEqual(['demo:sideload-readiness']);
 });

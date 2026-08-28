@@ -102,7 +102,7 @@ esac
   }
 });
 
-test('latest.json contains real per-platform release asset URLs', async () => {
+test('@claim:release-manifest latest.json contains real per-platform release asset URLs', async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'sideload-readiness-manifest-'));
   const filenames = [
     'sideload-readiness-linux-x86_64.tar.gz',
@@ -132,6 +132,7 @@ test('latest.json contains real per-platform release asset URLs', async () => {
 
 test('packaging metadata keeps the CLI identity and version', async () => {
   const cargo = await read('Cargo.toml');
+  const nfpm = await read('packaging/nfpm.yaml');
   const winget = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.yaml');
   const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.installer.yaml');
   const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.locale.en-US.yaml');
@@ -139,6 +140,7 @@ test('packaging metadata keeps the CLI identity and version', async () => {
   const brew = await read('packaging/homebrew/sideload-readiness.rb');
   assert.match(cargo, /name = "sideload-readiness"/);
   assert.match(cargo, /version = "0\.1\.1"/);
+  assert.match(nfpm, /version: 0\.1\.1/);
   assert.match(winget, /PackageVersion: 0\.1\.1/);
   assert.match(winget, /ManifestType: version/);
   assert.match(wingetInstaller, /ManifestType: installer/);
@@ -147,6 +149,7 @@ test('packaging metadata keeps the CLI identity and version', async () => {
   assert.match(wingetLocale, /ManifestType: defaultLocale/);
   assert.match(scoop, /"version": "0\.1\.1"/);
   assert.match(scoop, /"hash": "c01caee6006897c1296d52f44698a8affc8234ad91260eee91c7446ea96769ee"/);
+  assert.match(brew, /version "0\.1\.1"/);
   assert.match(brew, /on_arm do/);
   assert.match(brew, /on_intel do/);
   assert.match(brew, /e999964dbe1f06631c341091ad215bdffb907e98d634d9095783babdf32f2fe8/);

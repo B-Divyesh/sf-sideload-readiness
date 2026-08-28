@@ -4,8 +4,8 @@ import { execFile } from 'node:child_process';
 import { readdir, readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
-const get = (name) => readFile(new URL(`../site/${name}`, import.meta.url), 'utf8');
-const getRoot = (name) => readFile(new URL(`../${name}`, import.meta.url), 'utf8');
+const get = name => readFile(new URL(`../site/${name}`, import.meta.url), 'utf8');
+const getRoot = name => readFile(new URL(`../${name}`, import.meta.url), 'utf8');
 const exec = promisify(execFile);
 
 test('npm clean installs are locked to the declared package', async () => {
@@ -23,12 +23,14 @@ test('the sample report source uses the isolated demo namespace', async () => {
   assert.match(app, /DEMO_REPORT/);
   assert.match(app, /demo:/);
 });
+
 test('site source declares no third-party runtime code', async () => {
   const html = await get('index.html');
   assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//);
   assert.match(html, /<main id="main"/);
   assert.match(html, /<html lang="en"/);
 });
+
 test('site has required routes and metadata', async () => {
   const html = await get('index.html');
   const config = await get('staticwebapp.config.json');
@@ -59,6 +61,8 @@ test('production build fingerprints code assets and gives them immutable caching
   assert.equal(assets.length, 2);
   const immutable = config.routes.find(route => route.route === '/assets/*');
   assert.equal(immutable.headers['Cache-Control'], 'public, max-age=31536000, immutable');
+  const serviceWorkerPolicy = config.routes.find(route => route.route === '/service-worker.js');
+  assert.equal(serviceWorkerPolicy.headers['Cache-Control'], 'no-cache');
   const worker = await getRoot('dist/site/service-worker.js');
   assert.doesNotMatch(worker, /__ASSET_VERSION__/);
   assert.match(worker, /\/assets\/app\.[a-f0-9]{12}\.js/);
