@@ -74,6 +74,8 @@ cargo package --allow-dirty
 - Linux tar SHA-256
   `8ca68826ad662f4cc4b2e6d7f2a235e05a3f2cfb4c9be97a3ca152e5c602bb98`
   matches the manifest. Its binary reports 0.1.1 and emits valid redacted JSON.
+- All eight platform packages downloaded and passed `sha256sum --check`; the
+  Windows zip and macOS tar contain their expected single binaries.
 - The live `curl -fsSL https://sideload-readiness.sociobot.in/install.sh | sh`
   flow succeeded in a clean home, verified SHA-256, and installed 0.1.1.
 - Homebrew, Scoop, and winget metadata contains the published 0.1.1 URLs and
