@@ -5,7 +5,13 @@
   "scripts": {
     "build": "npm run build:site",
     "build:site": "node scripts/build-site.mjs",
-    "test": "node --test tests/site.test.mjs",
+    "test": "npm run test:unit && npm run test:browser",
+    "test:unit": "node --test",
+    "test:browser": "playwright test",
     "dev": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2"
   }
 }

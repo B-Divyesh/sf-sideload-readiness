@@ -2,6 +2,6 @@
   {"id":"demo-report","claim":"The sample shows a redacted readiness report and recovery checklist.","where":"Demo page and README","test":"cargo test claim_demo_report_is_redacted_and_actionable","sandbox":"Fresh clone; run the bundled demo report fixture."},
   {"id":"json-report","claim":"The command can print a machine-readable report.","where":"README usage","test":"cargo test claim_demo_json_is_machine_readable","sandbox":"Fresh clone; serialize the bundled demo report."},
   {"id":"redacted-id","claim":"Exported reports redact device IDs.","where":"Landing facts and README","test":"cargo test serials_are_never_exported_verbatim","sandbox":"Fresh clone; test the report redactor."},
-  {"id":"local-demo","claim":"The browser demo uses sample data in its own storage namespace.","where":"Demo banner and README","test":"npm test -- --test-name-pattern='@claim:local-demo'","sandbox":"Fresh site source; assert the sample report and demo: namespace are local."},
-  {"id":"privacy","claim":"The site loads no third-party runtime scripts.","where":"Privacy page and README","test":"npm test -- --test-name-pattern='@claim:privacy'","sandbox":"Fresh site source; assert every script source is same-origin."}
+  {"id":"local-demo","claim":"The browser demo uses sample data in its own storage namespace.","where":"Demo banner and README","test":"npm run test:unit -- --test-name-pattern='@claim:local-demo'","sandbox":"Fresh site source; assert the sample report and demo: namespace are local."},
+  {"id":"privacy","claim":"The site loads no third-party runtime scripts.","where":"Privacy page and README","test":"npm run test:unit -- --test-name-pattern='@claim:privacy'","sandbox":"Fresh site source; assert every script source is same-origin."}
 ]

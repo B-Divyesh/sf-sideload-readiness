@@ -96,6 +96,7 @@ Requirements: current Rust stable, Node 20+, and `adb` only for a live check.
 
 ```sh
 cargo test
+npm ci
 npm test
 npm run build:site   # creates dist/site with index.html at its root
 npm run dev          # serves the source site on http://localhost:4173
@@ -103,6 +104,8 @@ npm run dev          # serves the source site on http://localhost:4173
 
 `npm run build` is an alias for the deploy build. Release installers are built
 only in GitHub Actions by `.github/workflows/release.yml`.
+`npm test` includes desktop and 390 px mobile browser checks for keyboard use,
+accessibility, offline reloads, privacy, and release-download behavior.
 
 ## Privacy and license
 
