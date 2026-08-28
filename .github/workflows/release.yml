@@ -67,14 +67,17 @@ jobs:
           Copy-Item target/${{ matrix.target }}/release/sideload-readiness.exe out/sideload-readiness.exe
           Compress-Archive -Path out/sideload-readiness.exe -DestinationPath out/sideload-readiness-windows-x86_64.zip
       - uses: actions/upload-artifact@v4
-        with: { name: ${{ matrix.label }}, path: out/* }
+        with:
+          name: ${{ matrix.label }}
+          path: out/*
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
-        with: { path: release }
+        with:
+          path: release
       - name: Build release manifest and checksums
         shell: bash
         run: |
