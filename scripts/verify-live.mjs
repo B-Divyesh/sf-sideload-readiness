@@ -7,7 +7,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 const baseURL = process.argv[2] || 'https://sideload-readiness.sociobot.in';
 const browser = await chromium.launch();
-const evidence = { baseURL, identity: {}, routes: {}, consoleErrors: [], expectedNotFoundNetworkErrors: 0, mobile: {}, offline: false };
+const evidence = { baseURL, identity: {}, routes: {}, consoleErrors: [], expectedNotFoundNetworkErrors: 0, mobile: {}, demoIsolation: {}, offline: false };
 
 const localIndex = await readFile(resolve('dist/site/index.html'));
 const indexText = localIndex.toString('utf8');
@@ -41,7 +41,15 @@ try {
     }
     if (message.type() === 'error') evidence.consoleErrors.push(text);
   });
-  for (const route of ['/', '/demo', '/privacy', '/terms', '/unambiguously-missing-qa-route']) {
+  const routes = [
+    ['/', 200, 'Sideload Readiness — Check Android update safety', '/', 'Check whether an Android device is ready for an approved sideloaded update.'],
+    ['/?demo=1', 200, 'Demo — Sideload Readiness', '/demo', 'Try a redacted Android readiness report with isolated sample data.'],
+    ['/demo', 200, 'Demo — Sideload Readiness', '/demo', 'Try a redacted Android readiness report with isolated sample data.'],
+    ['/privacy', 200, 'Privacy — Sideload Readiness', '/privacy', 'Learn what Sideload Readiness reads, stores, and sends during device checks.'],
+    ['/terms', 200, 'Terms — Sideload Readiness', '/terms', 'Read the terms for using Sideload Readiness with approved Android devices and apps.'],
+    ['/unambiguously-missing-qa-route', 404, 'Not found — Sideload Readiness', '/404.html', 'The requested Sideload Readiness page could not be found.']
+  ];
+  for (const [route, status, title, canonicalPath, description] of routes) {
     checkingIntentionalNotFound = route === '/unambiguously-missing-qa-route';
     const response = await page.goto(`${baseURL}${route}`, { waitUntil: 'networkidle' });
     const violations = (await new AxeBuilder({ page }).analyze()).violations
@@ -49,10 +57,19 @@ try {
     evidence.routes[route] = {
       status: response.status(),
       title: await page.title(),
+      canonical: await page.locator('link[rel="canonical"]').getAttribute('href'),
+      description: await page.locator('meta[name="description"]').getAttribute('content'),
+      ogTitle: await page.locator('meta[property="og:title"]').getAttribute('content'),
+      ogUrl: await page.locator('meta[property="og:url"]').getAttribute('content'),
       h1: await page.locator('h1').count(),
       seriousOrCriticalAxe: violations.length
     };
-    assert.equal(response.status(), route === '/unambiguously-missing-qa-route' ? 404 : 200);
+    assert.equal(response.status(), status);
+    assert.equal(evidence.routes[route].title, title);
+    assert.equal(evidence.routes[route].canonical, `${baseURL}${canonicalPath}`);
+    assert.equal(evidence.routes[route].description, description);
+    assert.equal(evidence.routes[route].ogTitle, title);
+    assert.equal(evidence.routes[route].ogUrl, `${baseURL}${canonicalPath}`);
     assert.equal(evidence.routes[route].h1, 1);
     assert.equal(violations.length, 0);
     checkingIntentionalNotFound = false;
@@ -60,6 +77,25 @@ try {
   await page.goto(baseURL);
   await page.keyboard.press('Tab');
   assert.equal(await page.getByRole('link', { name: 'Skip to report' }).evaluate(element => element === document.activeElement), true);
+  await page.getByRole('heading', { level: 2, name: 'Install the command-line tool' }).waitFor();
+  await page.getByRole('heading', { level: 2, name: 'How the readiness check works' }).waitFor();
+  await page.getByRole('heading', { level: 3, name: 'What the CLI checks' }).waitFor();
+  await page.getByRole('heading', { level: 3, name: 'What the CLI never does' }).waitFor();
+  await page.evaluate(() => localStorage.setItem('real:sentinel', 'must-survive'));
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  assert.match(page.url(), /\?demo=1$/);
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  const demoKeys = await page.evaluate(() => Object.keys(localStorage).sort());
+  assert.deepEqual(demoKeys, ['demo:sideload-readiness', 'real:sentinel']);
+  await page.getByRole('link', { name: 'Start for real' }).click();
+  evidence.demoIsolation = {
+    enteredAt: `${baseURL}/?demo=1`,
+    resetKeys: demoKeys,
+    demoKeyAfterExit: await page.evaluate(() => localStorage.getItem('demo:sideload-readiness')),
+    realSentinelAfterExit: await page.evaluate(() => localStorage.getItem('real:sentinel'))
+  };
+  assert.equal(evidence.demoIsolation.demoKeyAfterExit, null);
+  assert.equal(evidence.demoIsolation.realSentinelAfterExit, 'must-survive');
   await desktop.close();
 
   const mobile = await browser.newContext({ ...devices['Pixel 5'], viewport: { width: 390, height: 844 } });
