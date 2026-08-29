@@ -41,6 +41,22 @@ test('published CLI file-safety promises have one tagged public-command claim ea
   }
 });
 
+test('every declared claim has exactly one tagged executable test', async () => {
+  const claims = JSON.parse(await getRoot('.factory/claims.json'));
+  const sources = await Promise.all([
+    'tests/cli.rs',
+    'tests/release.test.mjs',
+    'tests/browser/site.spec.mjs',
+    'scripts/verify-billing.mjs'
+  ].map(getRoot));
+  const all = sources.join('\n');
+  assert.equal(new Set(claims.map(claim => claim.id)).size, claims.length, 'claim ids are unique');
+  for (const claim of claims) {
+    const escaped = claim.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    assert.equal([...all.matchAll(new RegExp(`@claim:${escaped}(?![a-z0-9-])`, 'g'))].length, 1, `${claim.id} has exactly one tagged test`);
+  }
+});
+
 test('the sample report source uses the isolated demo namespace', async () => {
   const app = await get('app.js');
   assert.match(app, /Try it with sample data/);

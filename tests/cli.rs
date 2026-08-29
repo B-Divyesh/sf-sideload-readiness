@@ -86,6 +86,7 @@ fn run_automatic_demo(temp_dir: &Path) -> PathBuf {
 }
 
 #[test]
+// @claim:demo-report
 fn claim_demo_report_is_redacted_and_actionable() {
     let (output, parsed) = run_demo_json("claim-demo-report");
     assert_eq!(parsed["mode"], "demo");
@@ -99,6 +100,7 @@ fn claim_demo_report_is_redacted_and_actionable() {
 }
 
 #[test]
+// @claim:json-report
 fn claim_demo_json_is_machine_readable() {
     let (output, parsed) = run_demo_json("claim-json-report");
     assert_eq!(parsed["schema"], "sideload-readiness/v1");
@@ -108,6 +110,7 @@ fn claim_demo_json_is_machine_readable() {
 }
 
 #[test]
+// @claim:single-device-free
 fn claim_single_device_check_is_free() {
     let (output, parsed) = run_demo_json("claim-free-device");
     assert_eq!(parsed["mode"], "demo");
@@ -116,6 +119,7 @@ fn claim_single_device_check_is_free() {
 }
 
 #[test]
+// @claim:demo-no-adb
 fn claim_demo_uses_no_adb_and_writes_a_temporary_report() {
     let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
         .args(["demo", "--adb", "/definitely/not/an/adb/binary"])
@@ -310,6 +314,7 @@ esac
 
 #[cfg(unix)]
 #[test]
+// @claim:signer-unreadable
 fn unreadable_installed_apk_is_never_reported_ready() {
     let (adb_path, log_path, report) = run_mock_device_case("signing-info-only", &[], true);
     let signer = report["findings"]
@@ -329,6 +334,7 @@ fn unreadable_installed_apk_is_never_reported_ready() {
 
 #[cfg(unix)]
 #[test]
+// @claim:signer-continuity
 fn claim_signer_identity_is_extracted_and_compared() {
     let (adb_path, log_path, matched) =
         run_mock_device_with_args("claim-signer-match", &["--expected-signer", SIGNER_SHA256]);
@@ -374,6 +380,7 @@ fn claim_signer_identity_is_extracted_and_compared() {
 
 #[cfg(unix)]
 #[test]
+// @claim:redacted-id
 fn claim_exported_device_id_is_redacted() {
     let (adb_path, log_path, parsed) = run_mock_device("claim-redaction");
     let rendered = serde_json::to_string(&parsed).expect("report serializes");
@@ -408,6 +415,7 @@ fn storage_below_the_floor_reports_the_exact_shortfall() {
 
 #[cfg(unix)]
 #[test]
+// @claim:read-only-checks
 fn claim_device_checks_are_read_only_and_non_mutating() {
     let (adb_path, log_path, _) = run_mock_device("claim-read-only");
     let commands = fs::read_to_string(&log_path).expect("adb calls were logged");
@@ -448,6 +456,82 @@ fn claim_device_checks_are_read_only_and_non_mutating() {
 
 #[cfg(unix)]
 #[test]
+// @claim:diagnostic-report
+fn claim_live_report_covers_each_documented_check_and_recovery_outcome() {
+    let (adb_path, log_path, report) = run_mock_device_with_args(
+        "claim-diagnostic-report",
+        &["--expected-signer", SIGNER_SHA256],
+    );
+    let findings = report["findings"].as_array().expect("findings");
+    let expected = [
+        ("connection", "ready"),
+        ("developer-options", "ready"),
+        ("usb-mode", "ready"),
+        ("storage", "ready"),
+        ("signer", "ready"),
+        ("recovery", "needs-review"),
+    ];
+    assert_eq!(findings.len(), expected.len());
+    for (id, status) in expected {
+        let finding = findings
+            .iter()
+            .find(|finding| finding["id"] == id)
+            .unwrap_or_else(|| panic!("missing {id} finding"));
+        assert_eq!(finding["status"], status);
+        assert!(finding["detail"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()));
+        assert!(finding["next_step"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty()));
+    }
+    let recovery = findings
+        .iter()
+        .find(|finding| finding["id"] == "recovery")
+        .unwrap();
+    assert!(recovery["detail"]
+        .as_str()
+        .unwrap()
+        .contains("cannot be proven safely"));
+    assert!(recovery["next_step"]
+        .as_str()
+        .unwrap()
+        .contains("device maker's approved recovery instructions"));
+    assert_eq!(report["recovery_checklist"].as_array().unwrap().len(), 5);
+    fs::remove_file(adb_path).expect("mock adb can be removed");
+    fs::remove_file(log_path).expect("mock log can be removed");
+}
+
+#[test]
+// @claim:example-schema
+fn claim_example_report_matches_the_public_demo_schema_and_values() {
+    let (output, produced) = run_demo_json("claim-example-schema");
+    let example: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/examples/sample-report.json"
+    )))
+    .expect("example report is valid JSON");
+    for pointer in [
+        "/schema",
+        "/mode",
+        "/device/id",
+        "/device/android",
+        "/device/usb_mode",
+        "/score",
+        "/summary",
+    ] {
+        assert_eq!(
+            produced.pointer(pointer),
+            example.pointer(pointer),
+            "example differs at {pointer}"
+        );
+    }
+    fs::remove_file(output).expect("temporary report is removable");
+}
+
+#[cfg(unix)]
+#[test]
+// @claim:unauthorized-device
 fn claim_unauthorized_devices_are_refused_with_a_next_step() {
     use std::os::unix::fs::PermissionsExt;
 
@@ -476,6 +560,7 @@ fn claim_unauthorized_devices_are_refused_with_a_next_step() {
 
 #[cfg(unix)]
 #[test]
+// @claim:device-selection
 fn multiple_devices_require_an_explicit_redacted_selection() {
     use std::os::unix::fs::PermissionsExt;
 

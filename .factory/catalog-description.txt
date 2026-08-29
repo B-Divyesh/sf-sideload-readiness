@@ -1,0 +1,1 @@
+Check Android update safety before maintaining an approved sideloaded app.

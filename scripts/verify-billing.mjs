@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 
+// @claim:fleet-checkout
+
 const api = process.argv[2] || 'https://api.sociobot.in';
 const product = 'sideload-readiness';
 const catalogResponse = await fetch(`${api}/api/v1/products`);

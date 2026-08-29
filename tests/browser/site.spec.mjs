@@ -74,6 +74,16 @@ test('unknown server paths return the designed 404 document with HTTP 404', asyn
   await expect(page).toHaveTitle('Not found — Sideload Readiness');
   await expect(page.getByRole('heading', { level: 1, name: 'That page is not here' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Return to Sideload Readiness' })).toBeVisible();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://sideload-readiness.sociobot.in/404.html');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Not found — Sideload Readiness');
+});
+
+test('demo install link reaches the real install section', async ({ page }) => {
+  await page.goto('/?demo=1');
+  await page.getByRole('link', { name: 'See install options' }).click();
+  await expect(page).toHaveURL(/\/#install$/);
+  await expect(page.locator('#install')).toBeInViewport();
+  await expect(page.locator('h1')).toBeFocused();
 });
 
 for (const { label, userAgent, expectedAsset } of [
@@ -146,7 +156,7 @@ test('keyboard navigation reaches the demo and reset controls', async ({ page })
   await expect(page.getByRole('link', { name: 'Skip to report' })).toBeFocused();
   await page.getByRole('link', { name: 'Try it with sample data' }).focus();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page).toHaveURL(/\?demo=1$/);
   await expect(page.locator('h1')).toHaveText('Find the next safe step');
   await page.getByRole('button', { name: 'Reset demo' }).focus();
   await page.keyboard.press('Space');
@@ -162,6 +172,24 @@ test('history navigation restores the route and focus', async ({ page }) => {
   await expect(page.locator('h1')).toHaveText('Check Android update safety');
   await expect(page.locator('h1')).toBeFocused();
 });
+
+for (const expected of [
+  { path: '/', title: 'Sideload Readiness — Check Android update safety', canonical: '/', description: 'Check whether an Android device is ready for an approved sideloaded update.' },
+  { path: '/?demo=1', title: 'Demo — Sideload Readiness', canonical: '/demo', description: 'Try a redacted Android readiness report with isolated sample data.' },
+  { path: '/demo', title: 'Demo — Sideload Readiness', canonical: '/demo', description: 'Try a redacted Android readiness report with isolated sample data.' },
+  { path: '/privacy', title: 'Privacy — Sideload Readiness', canonical: '/privacy', description: 'Learn what Sideload Readiness reads, stores, and sends during device checks.' },
+  { path: '/terms', title: 'Terms — Sideload Readiness', canonical: '/terms', description: 'Read the terms for using Sideload Readiness with approved Android devices and apps.' }
+]) {
+  test(`route metadata is specific to ${expected.path}`, async ({ page }) => {
+    await page.goto(expected.path);
+    await expect(page).toHaveTitle(expected.title);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://sideload-readiness.sociobot.in${expected.canonical}`);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', expected.description);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', expected.title);
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', expected.description);
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', `https://sideload-readiness.sociobot.in${expected.canonical}`);
+  });
+}
 
 for (const path of ['/', '/demo', '/privacy', '/terms', '/missing']) {
   test(`accessibility has no serious or critical findings on ${path}`, async ({ page }) => {
@@ -201,13 +229,19 @@ test('reduced motion and 200% text preserve the report', async ({ page }) => {
 });
 
 test('@claim:local-demo the sample uses only its demo storage namespace', async ({ page }) => {
-  await page.goto('/demo');
+  await page.addInitScript(() => localStorage.setItem('real:sentinel', 'must-survive'));
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\?demo=1$/);
   await page.getByRole('button', { name: 'Reset demo' }).click();
   await page.reload();
   await expect(page.getByText('Demo — sample data, nothing is saved.')).toBeVisible();
-  const keys = await page.evaluate(() => Object.keys(localStorage));
-  expect(keys).toEqual(['demo:sideload-readiness']);
+  const keys = await page.evaluate(() => Object.keys(localStorage).sort());
+  expect(keys).toEqual(['demo:sideload-readiness', 'real:sentinel']);
   expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).toContain('device-6f31a0b2');
+  await page.getByRole('link', { name: 'Start for real' }).click();
+  expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('real:sentinel'))).toBe('must-survive');
 });
 
 test('starting for real discards the demo storage namespace', async ({ page }) => {

@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Captured from the rendered `/` route for v0.1.3. Headings, actions, status
+Captured from the rendered `/` route for perfection-loop round 1. Headings, actions, status
 labels, report text, and prose are included. No line exceeds 22 words. The
 literal safety statements about not unlocking devices are the allowed literal
 use of “unlock.” No other banned word appears.
@@ -41,11 +41,13 @@ use of “unlock.” No other banned word appears.
 | Keep the approved APK and its known-good version. | 8 | — |
 | Record the app package and signer before an update. | 9 | — |
 | Stop after an error and save the report before retrying. | 10 | — |
-| Install one small command | 4 | — |
+| Install the command-line tool | 4 | — |
 | Signer matched. | 2 | — |
 | Review recovery before updating. | 4 | — |
 | The command asks adb for status. | 6 | — |
 | It does not install apps, unlock devices, or change Android settings. | 11 | literal “unlock” |
+| The macOS package and Windows app are unsigned. | 8 | listed claim |
+| Verify the matching Sigstore bundle before installation. | 7 | listed claim |
 | Open release downloads | 3 | — |
 | Linux and macOS installer | 4 | — |
 | PowerShell installer | 2 | — |
@@ -59,7 +61,7 @@ use of “unlock.” No other banned word appears.
 | Open releases to choose a file. | 6 | — |
 | Downloads are being published. | 4 | — |
 | Open the release page for the current status. | 8 | — |
-| Make one cautious maintenance decision | 5 | — |
+| How the readiness check works | 5 | — |
 | Connect | 1 | — |
 | Accept Android’s USB debugging prompt. | 5 | — |
 | Choose a device when adb lists more than one. | 9 | — |
@@ -70,10 +72,10 @@ use of “unlock.” No other banned word appears.
 | Save a redacted report. | 4 | — |
 | Follow its next step or stop before an update. | 9 | — |
 | What this tool does and does not do | 8 | — |
-| It does | 2 | — |
+| What the CLI checks | 4 | — |
 | Make a device-specific report from read-only adb queries. | 8 | — |
 | It explains what to check next. | 6 | — |
-| It does not | 3 | — |
+| What the CLI never does | 5 | — |
 | It never bypasses Android controls, unlocks bootloaders, or distributes APKs. | 10 | literal “unlock” |
 | Small IT teams | 3 | — |
 | Review several reports together | 4 | — |
@@ -86,6 +88,14 @@ use of “unlock.” No other banned word appears.
 | Paste it here. | 3 | — |
 | Verify fleet license | 3 | — |
 | Verification happens with Sociobot when you choose this button. | 9 | — |
+
+## README audit
+
+The README was checked sentence by sentence after the repair. No sentence exceeds
+22 words and no banned marketing word appears. Every behavior or trust statement
+maps to one entry in `.factory/claims.json`. In particular, signer read failures,
+all six diagnostics, example parity, platform signing status, Sigstore provenance,
+and the Sociobot-only billing boundary now have dedicated tagged tests.
 
 ## Terminology
 

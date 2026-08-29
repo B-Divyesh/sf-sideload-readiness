@@ -6,6 +6,8 @@ import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { inflateRawSync, inflateSync } from 'node:zlib';
+import { verifyPublishedSignatures } from '../scripts/verify-release-signatures.mjs';
 
 const read = (name) => readFile(new URL(`../${name}`, import.meta.url), 'utf8');
 const exec = promisify(execFile);
@@ -30,15 +32,72 @@ test('@claim:platform-packaging release workflow retains the installer artifact 
   ]) assert.match(workflow, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
-test('@claim:release-signatures release workflows use GitHub OIDC to sign every published asset', async () => {
-  const release = await read('.github/workflows/release.yml');
-  const repair = await read('.github/workflows/sign-release.yml');
-  for (const workflow of [release, repair]) {
-    assert.match(workflow, /id-token: write/);
-    assert.match(workflow, /sigstore\/cosign-installer@v3/);
-    assert.match(workflow, /cosign sign-blob --yes --bundle/);
+test('@claim:release-signatures every current release asset passes pinned Cosign verification', { timeout: 180_000 }, async () => {
+  const result = await verifyPublishedSignatures();
+  assert.match(result.tag, /^v\d+\.\d+\.\d+$/);
+  assert.equal(result.cosignVersion, '2.4.1');
+  assert.ok(result.verifiedAssets.length >= 8);
+});
+
+function zipEntry(archive, wanted) {
+  const eocd = archive.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  assert.ok(eocd >= 0, 'zip end record exists');
+  let offset = archive.readUInt32LE(eocd + 16);
+  const count = archive.readUInt16LE(eocd + 10);
+  for (let index = 0; index < count; index += 1) {
+    assert.equal(archive.readUInt32LE(offset), 0x02014b50, 'zip central entry is valid');
+    const method = archive.readUInt16LE(offset + 10);
+    const compressedSize = archive.readUInt32LE(offset + 20);
+    const nameLength = archive.readUInt16LE(offset + 28);
+    const extraLength = archive.readUInt16LE(offset + 30);
+    const commentLength = archive.readUInt16LE(offset + 32);
+    const localOffset = archive.readUInt32LE(offset + 42);
+    const name = archive.subarray(offset + 46, offset + 46 + nameLength).toString();
+    if (name === wanted) {
+      assert.equal(archive.readUInt32LE(localOffset), 0x04034b50, 'zip local entry is valid');
+      const localNameLength = archive.readUInt16LE(localOffset + 26);
+      const localExtraLength = archive.readUInt16LE(localOffset + 28);
+      const start = localOffset + 30 + localNameLength + localExtraLength;
+      const bytes = archive.subarray(start, start + compressedSize);
+      return method === 8 ? inflateRawSync(bytes) : bytes;
+    }
+    offset += 46 + nameLength + extraLength + commentLength;
   }
-  assert.match(repair, /endswith\("\.sigstore\.json"\) \| not/);
+  assert.fail(`${wanted} must exist in the release zip`);
+}
+
+test('@claim:unsigned-platform-disclosure current macOS and Windows downloads are unsigned', async () => {
+  const response = await fetch('https://api.github.com/repos/B-Divyesh/sf-sideload-readiness/releases/latest');
+  assert.equal(response.status, 200);
+  const release = await response.json();
+  const asset = name => release.assets.find(item => item.name === name)?.browser_download_url;
+  const [pkgResponse, zipResponse] = await Promise.all([
+    fetch(asset('sideload-readiness-macos-aarch64.pkg')),
+    fetch(asset('sideload-readiness-windows-x86_64.zip'))
+  ]);
+  assert.equal(pkgResponse.status, 200);
+  assert.equal(zipResponse.status, 200);
+  const pkg = Buffer.from(await pkgResponse.arrayBuffer());
+  assert.equal(pkg.subarray(0, 4).toString(), 'xar!');
+  const headerSize = pkg.readUInt16BE(4);
+  const compressedTocSize = Number(pkg.readBigUInt64BE(8));
+  const toc = inflateSync(pkg.subarray(headerSize, headerSize + compressedTocSize)).toString();
+  assert.doesNotMatch(toc, /<signature\b/i, 'macOS package must not contain an Apple package signature');
+  const archive = Buffer.from(await zipResponse.arrayBuffer());
+  const executable = zipEntry(archive, 'sideload-readiness.exe');
+  const peOffset = executable.readUInt32LE(0x3c);
+  assert.equal(executable.readUInt32LE(peOffset), 0x00004550, 'Windows app is a PE file');
+  const optional = peOffset + 24;
+  const dataDirectories = optional + (executable.readUInt16LE(optional) === 0x20b ? 112 : 96);
+  assert.equal(executable.readUInt32LE(dataDirectories + 8 * 4 + 4), 0, 'Windows app has no Authenticode certificate table');
+});
+
+test('@claim:billing-provider-boundary runtime payment requests go only through Sociobot', async () => {
+  const sources = await Promise.all(['site/app.js', 'site/index.html', 'site/install.sh', 'site/install.ps1'].map(read));
+  const runtime = sources.join('\n');
+  assert.doesNotMatch(runtime, /(?:api\.|checkout\.)?(?:dodo|stripe|paddle|lemonsqueezy)\.[a-z]+/i);
+  assert.match(runtime, /https:\/\/api\.sociobot\.in\/api\/v1\/products\/sideload-readiness\/checkout/);
+  assert.match(runtime, /https:\/\/api\.sociobot\.in\/api\/v1\/products\/\$\{PRODUCT\}\/verify/);
 });
 
 test('one-line installers require a matching published checksum', async () => {

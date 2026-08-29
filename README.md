@@ -7,7 +7,7 @@ read-only `adb` checks, writes a redacted report, and gives a recovery
 checklist. It never installs an APK, changes Android settings, unlocks a
 bootloader, or bypasses a device policy.
 
-The browser demo is at [sideload-readiness.sociobot.in/demo](https://sideload-readiness.sociobot.in/demo).
+The one-click browser demo is at [sideload-readiness.sociobot.in/?demo=1](https://sideload-readiness.sociobot.in/?demo=1).
 It uses sample data in a separate browser key. Nothing in demo mode touches a
 connected Android device.
 
@@ -25,7 +25,7 @@ irm https://sideload-readiness.sociobot.in/install.ps1 | iex
 ```
 
 The installers download the matching release, verify its SHA-256 checksum,
-then place the binary on your PATH. Every release asset also has a matching
+then place the binary on your PATH. Every current release payload and manifest has a valid
 GitHub OIDC Sigstore bundle. Verify a downloaded asset with:
 
 ```sh
@@ -35,9 +35,8 @@ cosign verify-blob --bundle sideload-readiness-linux-x86_64.tar.gz.sigstore.json
   sideload-readiness-linux-x86_64.tar.gz
 ```
 
-The macOS package is not Apple-notarized and the Windows zip is not signed
-with an organization Authenticode certificate. Their Sigstore bundles prove
-the GitHub Actions release provenance before installation.
+The macOS package and Windows app are unsigned. Verify their Sigstore bundles
+before installation. On macOS, right-click the package and choose Open.
 
 Install with the published Homebrew tap:
 
