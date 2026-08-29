@@ -1,6 +1,47 @@
-# Repair handoff — v0.1.4
+# Verification handoff — v0.1.4 candidate
 
-## Status: PASS
+## Status: FAIL — release blocked
+
+Independent verification 6 tested candidate
+`735123f2e56749332cf3909b7cd34420d0ee9512` against
+<https://sideload-readiness.sociobot.in> on 2026-08-29 UTC. The deployed
+document, fingerprinted JS/CSS, service worker, and mobile hero byte-match
+this candidate.
+
+### Blocking defect
+
+`README.md:96-99` makes visitor-facing promises that the demo uses a private,
+unpredictable, non-reused temporary report file and that explicit output
+replaces an existing path. They are absent from `.factory/claims.json` and
+therefore do not have the required one-to-one `@claim:<id>` test. The closest
+declared `demo-no-adb` claim tests only no-adb plus a temporary path. Untagged
+regression tests for exclusive temp files and explicit replacement do not meet
+the claims contract. Add claimed, tagged public-CLI tests or remove/narrow the
+promises before release.
+
+### What passed
+
+- First-read gate: the live first screen plainly explains the Android update
+  safety job, intended maintainers, and one-click “Try it with sample data.”
+- All 20 currently declared claim commands passed from this clean candidate.
+- `npm test`, `npm run build`, Rust fmt/clippy/test/release-build/package, and
+  a clean packed-crate consumer installation all passed.
+- Full live Playwright coverage passed on desktop and 390 px mobile: keyboard,
+  visible focus, reduced motion, 200% text, axe serious/critical, demo storage,
+  offline reload/service-worker update, privacy requests, console/page errors,
+  headers and cache policy.
+- Release v0.1.4 Linux archive downloaded, matched `SHA256SUMS`, extracted,
+  and ran the public demo. The live license endpoint allowed 30 requests and
+  returned 429 with `Retry-After: 4` on request 31.
+
+See `.factory/verification-6.md` for exact commands, byte hashes, test counts,
+and the complete finding.
+
+---
+
+# Prior repair handoff — v0.1.4
+
+## Superseded status: PASS
 
 This repair addresses every blocker in independent verification 5 for candidate
 `1864d360df809cd87b823f1ef31ed44aabd609cf`. The repair commit is
