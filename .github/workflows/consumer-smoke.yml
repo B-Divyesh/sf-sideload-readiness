@@ -1,0 +1,33 @@
+name: Published installer smoke tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linux-installer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install from the published shell path
+        run: |
+          curl -fsSL https://sideload-readiness.sociobot.in/install.sh | sh
+          "$HOME/.local/bin/sideload-readiness" --version
+          "$HOME/.local/bin/sideload-readiness" demo
+
+  homebrew:
+    runs-on: macos-latest
+    steps:
+      - name: Install from the documented tap
+        run: |
+          brew install B-Divyesh/sideload-readiness/sideload-readiness
+          sideload-readiness --version
+          sideload-readiness demo
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - name: Install from the published PowerShell path
+        shell: pwsh
+        run: |
+          irm https://sideload-readiness.sociobot.in/install.ps1 | iex
+          & "$env:LOCALAPPDATA\SideloadReadiness\bin\sideload-readiness.exe" --version
+          & "$env:LOCALAPPDATA\SideloadReadiness\bin\sideload-readiness.exe" demo

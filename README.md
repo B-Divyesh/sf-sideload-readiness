@@ -39,16 +39,16 @@ The macOS package is not Apple-notarized and the Windows zip is not signed
 with an organization Authenticode certificate. Their Sigstore bundles prove
 the GitHub Actions release provenance before installation.
 
-The repository includes a Homebrew formula for the operator-managed tap:
+Install with the published Homebrew tap:
 
 ```sh
 brew install B-Divyesh/sideload-readiness/sideload-readiness
 ```
 
-The repository also includes a Scoop manifest for the operator-managed bucket:
+Install with the published Scoop bucket:
 
 ```powershell
-scoop bucket add sideload-readiness https://github.com/B-Divyesh/sf-sideload-readiness
+scoop bucket add sideload-readiness https://github.com/B-Divyesh/scoop-sideload-readiness
 scoop install sideload-readiness
 ```
 
@@ -57,19 +57,32 @@ the first release checksums are known.
 
 ## Use
 
-Connect one device and accept Android's USB debugging prompt.
+Connect one device and accept Android's USB debugging prompt. If adb lists
+several authorized devices, the command stops until you pass `--device SERIAL`.
+
+Get the expected signer SHA-256 from your approved APK:
 
 ```sh
-sideload-readiness check --package com.example.approved --output readiness.md
+apksigner verify --print-certs approved.apk
 ```
 
-The optional package name asks Android for signer visibility. Compare that
-signer with your approved update before you install it.
+Compare that digest with the installed package:
+
+```sh
+sideload-readiness check --package com.example.approved \
+  --expected-signer 9A:25:70:5E:39:1F:B9:27:65:55:CA:AD:4F:45:42:8E:F1:BC:8A:C4:AC:65:AA:36:7A:76:FC:64:BB:43:CC:4D \
+  --output readiness.md
+```
+
+The report marks a matching digest `ready` and a mismatch `blocked`. If Android
+does not expose a stable digest, the report says `needs-review`.
 
 Use JSON in scripts:
 
 ```sh
-sideload-readiness check --package com.example.approved --json --output readiness.json
+sideload-readiness check --package com.example.approved \
+  --expected-signer 9A25705E391FB9276555CAAD4F45428EF1BC8AC4AC65AA367A76FC64BB43CC4D \
+  --json --output readiness.json
 ```
 
 Try the bundled sample without `adb`:
@@ -87,7 +100,7 @@ The report checks:
 - Authorized USB debugging and USB data mode.
 - Developer options visibility.
 - Free `/data` storage against a 1 GiB safety floor.
-- Package signer visibility when `--package` is supplied.
+- Installed signer SHA-256 comparison when a package and expected signer are supplied.
 - A/B update hints and a recovery checklist.
 
 Android does not expose a safe, complete recovery-sideload status while it is

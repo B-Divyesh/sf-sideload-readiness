@@ -10,7 +10,31 @@ permissions:
   id-token: write
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+      - name: Install browser test prerequisites
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Verify site, CLI, and production build
+        run: |
+          npm test
+          npm run build
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+
   build:
+    needs: verify
     strategy:
       fail-fast: false
       matrix:

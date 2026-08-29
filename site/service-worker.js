@@ -1,4 +1,4 @@
-const CACHE = 'sideload-readiness-v3-__ASSET_VERSION__';
+const CACHE = 'sideload-readiness-v4-__ASSET_VERSION__';
 const SHELL = ['/', '/index.html', '/app.js', '/style.css', '/public/hero-concrete-moss-768.webp', '/public/og-concrete-moss.webp', '/demo', '/privacy', '/terms'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(Promise.all([
