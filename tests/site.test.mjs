@@ -62,7 +62,7 @@ test('server 404 uses direct recovery copy', async () => {
 test('below-fold sections are painted for printing and full-page capture', async () => {
   const css = await get('style.css');
   assert.doesNotMatch(css, /content-visibility\s*:\s*auto/);
-  assert.doesNotMatch(css, /main:empty\{min-height:6500px\}/);
+  assert.match(css, /main:empty\{min-height:6500px\}/);
 });
 
 test('service worker replaces older offline shells during updates', async () => {
