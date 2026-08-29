@@ -37,6 +37,9 @@ The signature interaction is an evidence strip: readiness rows reveal with a
 short upward settle when a report is loaded. It communicates a physical test
 being completed. It is removed entirely under `prefers-reduced-motion`.
 
+At phone widths, the task text and sample action precede the field-device art.
+The art becomes supporting context below the complete first-screen action.
+
 ## Assets and provenance
 
 `site/public/hero-concrete-moss.webp` is an original generated editorial

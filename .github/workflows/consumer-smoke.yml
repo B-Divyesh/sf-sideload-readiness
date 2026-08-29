@@ -31,3 +31,19 @@ jobs:
           irm https://sideload-readiness.sociobot.in/install.ps1 | iex
           & "$env:LOCALAPPDATA\SideloadReadiness\bin\sideload-readiness.exe" --version
           & "$env:LOCALAPPDATA\SideloadReadiness\bin\sideload-readiness.exe" demo
+
+  scoop:
+    runs-on: windows-latest
+    steps:
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+          Invoke-Expression "& {$(Invoke-RestMethod https://get.scoop.sh)} -RunAsAdmin"
+      - name: Install from the documented bucket
+        shell: pwsh
+        run: |
+          scoop bucket add sideload-readiness https://github.com/B-Divyesh/scoop-sideload-readiness
+          scoop install sideload-readiness
+          sideload-readiness --version
+          sideload-readiness demo

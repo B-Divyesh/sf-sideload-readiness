@@ -52,8 +52,8 @@ scoop bucket add sideload-readiness https://github.com/B-Divyesh/scoop-sideload-
 scoop install sideload-readiness
 ```
 
-The `winget/` folder is ready for submission to `microsoft/winget-pkgs` after
-the first release checksums are known.
+The `winget/` folder contains the checksum-pinned v0.1.2 manifest. The owner
+must submit it to `microsoft/winget-pkgs` before advertising a winget command.
 
 ## Use
 
