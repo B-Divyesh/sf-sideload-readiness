@@ -1,11 +1,11 @@
 PackageIdentifier: Sociobot.SideloadReadiness
-PackageVersion: 0.1.1
+PackageVersion: 0.1.2
 InstallerType: zip
 UpgradeBehavior: install
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.1/sideload-readiness-windows-x86_64.zip
-    InstallerSha256: c01caee6006897c1296d52f44698a8affc8234ad91260eee91c7446ea96769ee
+    InstallerUrl: https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.2/sideload-readiness-windows-x86_64.zip
+    InstallerSha256: efde58358870c8de684159a84ed8bf7e89f8cd401ce20b00e60075a2da3d1325
     NestedInstallerType: portable
     NestedInstallerFiles:
       - RelativeFilePath: sideload-readiness.exe

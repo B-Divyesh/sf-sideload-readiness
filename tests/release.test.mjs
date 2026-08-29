@@ -147,25 +147,59 @@ test('@claim:release-manifest latest.json contains real per-platform release ass
 test('packaging metadata keeps the CLI identity and version', async () => {
   const cargo = await read('Cargo.toml');
   const nfpm = await read('packaging/nfpm.yaml');
-  const winget = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.yaml');
-  const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.installer.yaml');
-  const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.1/Sociobot.SideloadReadiness.locale.en-US.yaml');
+  const winget = await read('winget/Sociobot.SideloadReadiness/0.1.2/Sociobot.SideloadReadiness.yaml');
+  const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.2/Sociobot.SideloadReadiness.installer.yaml');
+  const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.2/Sociobot.SideloadReadiness.locale.en-US.yaml');
   const scoop = await read('scoop-bucket/sideload-readiness.json');
   const brew = await read('packaging/homebrew/sideload-readiness.rb');
   assert.match(cargo, /name = "sideload-readiness"/);
   assert.match(cargo, /version = "0\.1\.2"/);
   assert.match(nfpm, /version: 0\.1\.2/);
-  assert.match(winget, /PackageVersion: 0\.1\.1/);
+  assert.match(winget, /PackageVersion: 0\.1\.2/);
   assert.match(winget, /ManifestType: version/);
   assert.match(wingetInstaller, /ManifestType: installer/);
   assert.match(wingetInstaller, /sideload-readiness-windows-x86_64\.zip/);
-  assert.match(wingetInstaller, /c01caee6006897c1296d52f44698a8affc8234ad91260eee91c7446ea96769ee/);
+  assert.match(wingetInstaller, /efde58358870c8de684159a84ed8bf7e89f8cd401ce20b00e60075a2da3d1325/);
   assert.match(wingetLocale, /ManifestType: defaultLocale/);
-  assert.match(scoop, /"version": "0\.1\.1"/);
-  assert.match(scoop, /"hash": "c01caee6006897c1296d52f44698a8affc8234ad91260eee91c7446ea96769ee"/);
-  assert.match(brew, /version "0\.1\.1"/);
+  assert.match(scoop, /"version": "0\.1\.2"/);
+  assert.match(scoop, /"hash": "efde58358870c8de684159a84ed8bf7e89f8cd401ce20b00e60075a2da3d1325"/);
+  assert.match(brew, /version "0\.1\.2"/);
   assert.match(brew, /on_arm do/);
   assert.match(brew, /on_intel do/);
-  assert.match(brew, /e999964dbe1f06631c341091ad215bdffb907e98d634d9095783babdf32f2fe8/);
-  assert.match(brew, /c9b8e7bcaca39c3e8b0c4877d5872526e18ba98855be24c574ff4fb089730bf2/);
+  assert.match(brew, /416c47ad5bd1eadd11eaa669007e970da2b06e9218d3fc7b2930aac1c70ee699/);
+  assert.match(brew, /a2fc822d6bf5e21f139672716e36645a8133203b75ea45a6831bfbbae0bc01fc/);
+});
+
+test('@claim:published-installer-paths public installer paths match one checksummed release', async () => {
+  const fetchText = async url => {
+    const response = await fetch(url);
+    assert.equal(response.status, 200, `${url} must be public`);
+    return response.text();
+  };
+  const [shell, powershell, formula, scoopSource] = await Promise.all([
+    fetchText('https://sideload-readiness.sociobot.in/install.sh'),
+    fetchText('https://sideload-readiness.sociobot.in/install.ps1'),
+    fetchText('https://raw.githubusercontent.com/B-Divyesh/homebrew-sideload-readiness/main/Formula/sideload-readiness.rb'),
+    fetchText('https://raw.githubusercontent.com/B-Divyesh/scoop-sideload-readiness/main/bucket/sideload-readiness.json')
+  ]);
+  assert.match(shell, /SHA-256 verified/);
+  assert.match(powershell, /SHA-256 verified/);
+
+  const version = formula.match(/version "([^"]+)"/)?.[1];
+  assert.ok(version, 'the public Homebrew formula must declare a version');
+  const scoop = JSON.parse(scoopSource);
+  assert.equal(scoop.version, version);
+  const sums = await fetchText(`https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v${version}/SHA256SUMS`);
+  const checksums = new Map(sums.trim().split('\n').map(line => {
+    const [hash, filename] = line.trim().split(/\s+/);
+    return [filename, hash];
+  }));
+  for (const [asset, hash] of [
+    ['sideload-readiness-macos-aarch64.tar.gz', '416c47ad5bd1eadd11eaa669007e970da2b06e9218d3fc7b2930aac1c70ee699'],
+    ['sideload-readiness-macos-x86_64.tar.gz', 'a2fc822d6bf5e21f139672716e36645a8133203b75ea45a6831bfbbae0bc01fc'],
+    ['sideload-readiness-windows-x86_64.zip', scoop.hash]
+  ]) {
+    assert.equal(checksums.get(asset), hash);
+    assert.match(formula + scoopSource, new RegExp(`releases/download/v${version}/${asset}`));
+  }
 });
