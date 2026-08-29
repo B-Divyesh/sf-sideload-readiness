@@ -1,0 +1,104 @@
+{
+  "baseURL": "https://sideload-readiness.sociobot.in",
+  "identity": {
+    "/": "dc0819ce1790ede43a5e61367e9a710b7d5aa3a40c587e5563a947d7b0910676",
+    "/assets/style.153fe0711a98.css": "153fe0711a98b64e753dd98d8ab0b8a4826a45def135d3608bf4597d2741c63a",
+    "/assets/app.ad925ab2e3e9.js": "ad925ab2e3e956d15bca8443a58201f0dd016f1395ba6bbd768d09e62960b672",
+    "/service-worker.js": "91d5d6a034004e4cfde6fb5cf6bb49aa15c25aa38f0b12960c7d044fec329a11",
+    "/public/hero-concrete-moss-768.webp": "d7593ebdf8f476aff62c0697bc064cdb87b6f8c14f224ee998933de7c0bb7718"
+  },
+  "routes": {
+    "/": {
+      "status": 200,
+      "title": "Sideload Readiness — Check Android update safety",
+      "canonical": "https://sideload-readiness.sociobot.in/",
+      "description": "Check whether an Android device is ready for an approved sideloaded update.",
+      "ogTitle": "Sideload Readiness — Check Android update safety",
+      "ogUrl": "https://sideload-readiness.sociobot.in/",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/?demo=1": {
+      "status": 200,
+      "title": "Demo — Sideload Readiness",
+      "canonical": "https://sideload-readiness.sociobot.in/demo",
+      "description": "Try a redacted Android readiness report with isolated sample data.",
+      "ogTitle": "Demo — Sideload Readiness",
+      "ogUrl": "https://sideload-readiness.sociobot.in/demo",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/demo": {
+      "status": 200,
+      "title": "Demo — Sideload Readiness",
+      "canonical": "https://sideload-readiness.sociobot.in/demo",
+      "description": "Try a redacted Android readiness report with isolated sample data.",
+      "ogTitle": "Demo — Sideload Readiness",
+      "ogUrl": "https://sideload-readiness.sociobot.in/demo",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/privacy": {
+      "status": 200,
+      "title": "Privacy — Sideload Readiness",
+      "canonical": "https://sideload-readiness.sociobot.in/privacy",
+      "description": "Learn what Sideload Readiness reads, stores, and sends during device checks.",
+      "ogTitle": "Privacy — Sideload Readiness",
+      "ogUrl": "https://sideload-readiness.sociobot.in/privacy",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/terms": {
+      "status": 200,
+      "title": "Terms — Sideload Readiness",
+      "canonical": "https://sideload-readiness.sociobot.in/terms",
+      "description": "Read the terms for using Sideload Readiness with approved Android devices and apps.",
+      "ogTitle": "Terms — Sideload Readiness",
+      "ogUrl": "https://sideload-readiness.sociobot.in/terms",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/unambiguously-missing-qa-route": {
+      "status": 404,
+      "title": "Not found — Sideload Readiness",
+      "canonical": "https://sideload-readiness.sociobot.in/404.html",
+      "description": "The requested Sideload Readiness page could not be found.",
+      "ogTitle": "Not found — Sideload Readiness",
+      "ogUrl": "https://sideload-readiness.sociobot.in/404.html",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    }
+  },
+  "consoleErrors": [],
+  "expectedNotFoundNetworkErrors": 1,
+  "mobile": {
+    "firstViewport": {
+      "sampleAction": {
+        "x": 16,
+        "y": 442.3125,
+        "width": 243.671875,
+        "height": 48.3125
+      },
+      "actionOutcome": {
+        "x": 16,
+        "y": 505.625,
+        "width": 336.171875,
+        "height": 22.359375
+      }
+    },
+    "noHorizontalOverflow": true,
+    "undersizedTargets": [],
+    "externalRequests": []
+  },
+  "demoIsolation": {
+    "enteredAt": "https://sideload-readiness.sociobot.in/?demo=1",
+    "resetKeys": [
+      "demo:sideload-readiness",
+      "real:sentinel"
+    ],
+    "demoKeyAfterExit": null,
+    "realSentinelAfterExit": "must-survive",
+    "deviceApiRequests": 0
+  },
+  "offline": true
+}
