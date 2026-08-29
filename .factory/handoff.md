@@ -1,41 +1,79 @@
-# Verification handoff — v0.1.4 candidate
+# Repair handoff — claims-contract repair
 
-## Status: FAIL — release blocked
+## Status: PASS
 
-Independent verification 6 tested candidate
-`735123f2e56749332cf3909b7cd34420d0ee9512` against
-<https://sideload-readiness.sociobot.in> on 2026-08-29 UTC. The deployed
-document, fingerprinted JS/CSS, service worker, and mobile hero byte-match
-this candidate.
+Work order `sideload-readiness-repair-7` repaired independent verification 6
+for candidate `735123f2e56749332cf3909b7cd34420d0ee9512`. The product repair
+commit is `d35f6446a3245220367af6233336f4f88c348377`.
 
-### Blocking defect
+### Release blocker repaired
 
-`README.md:96-99` makes visitor-facing promises that the demo uses a private,
-unpredictable, non-reused temporary report file and that explicit output
-replaces an existing path. They are absent from `.factory/claims.json` and
-therefore do not have the required one-to-one `@claim:<id>` test. The closest
-declared `demo-no-adb` claim tests only no-adb plus a temporary path. Untagged
-regression tests for exclusive temp files and explicit replacement do not meet
-the claims contract. Add claimed, tagged public-CLI tests or remove/narrow the
-promises before release.
+The verifier found that README promises about automatic demo report files and
+explicit `--output` replacement had runtime regressions tests but no declared
+claims. The promises remain unchanged. `.factory/claims.json` now declares:
 
-### What passed
+- `private-demo-file`: an automatic demo uses a private, unpredictable,
+  non-reused temporary filename.
+- `explicit-output-replacement`: `demo --output PATH` replaces a pre-existing
+  file at the requested path.
 
-- First-read gate: the live first screen plainly explains the Android update
-  safety job, intended maintainers, and one-click “Try it with sample data.”
-- All 20 currently declared claim commands passed from this clean candidate.
-- `npm test`, `npm run build`, Rust fmt/clippy/test/release-build/package, and
-  a clean packed-crate consumer installation all passed.
-- Full live Playwright coverage passed on desktop and 390 px mobile: keyboard,
-  visible focus, reduced motion, 200% text, axe serious/critical, demo storage,
-  offline reload/service-worker update, privacy requests, console/page errors,
-  headers and cache policy.
-- Release v0.1.4 Linux archive downloaded, matched `SHA256SUMS`, extracted,
-  and ran the public demo. The live license endpoint allowed 30 requests and
-  returned 429 with `Retry-After: 4` on request 31.
+Each claim has one exact public-CLI test and a source `@claim:` marker.
+`tests/site.test.mjs` additionally proves both IDs occur once, their commands
+select the exact test, and each marker names that test. The private-file test
+runs the real CLI twice in an isolated temporary directory containing file and
+symlink collision fixtures, checks different regular mode-0600 reports, and
+asserts all collision targets stay unchanged. The explicit-output test seeds a
+file, invokes the public CLI, and checks its report replaces the seed.
 
-See `.factory/verification-6.md` for exact commands, byte hashes, test counts,
-and the complete finding.
+### Verification
+
+- Clean `npm ci` passed with 0 vulnerabilities. `npm test` passed all 18 Node
+  tests and 56 Playwright desktop/mobile tests. `npm run build` produced
+  `dist/site`.
+- All 22 commands in `.factory/claims.json` passed separately from the
+  repaired commit, including each browser claim's own `npm ci` prerequisite.
+  The billing probe observed a 303 checkout redirect and a 200 invalid-license
+  response without a purchase.
+- `cargo fmt --all -- --check`, `cargo clippy --all-targets --all-features --
+  -D warnings`, `cargo test --all-targets` (19 tests), and `cargo build
+  --release` passed. `cargo package --locked` packaged and verified 16 files.
+  An isolated unpacked-crate consumer built and ran `--help` plus `demo --json`.
+- Fresh Cosign 3.1.3 verification passed GitHub OIDC provenance for all 10
+  non-bundle assets in the published `v0.1.4` release.
+- Local URL verification found no console errors, a valid title/lang/h1/main,
+  and no missing image alt text. Lighthouse scored 1.0 for performance,
+  accessibility, best practices, and SEO.
+- Production `verify-url.sh`, `node scripts/verify-live.mjs`, and
+  `BASE_URL=https://sideload-readiness.sociobot.in npm run test:browser`
+  passed. The live suite covers desktop and 390 px mobile, keyboard/focus,
+  reduced motion, 200% text, axe, privacy request origins, CSP/cache policy,
+  service-worker update, and offline demo reload.
+
+### Deployment and evidence
+
+The rebuilt static artifact was deployed to production Azure Static Web App
+`sf-sideload-readiness` (deployment
+`bdef0b4b-0662-4860-9975-130bce518bb0`) and is live at
+<https://sideload-readiness.sociobot.in>. Live identity verification matched
+the local build for `index.html`, the fingerprinted JS/CSS, service worker,
+and mobile hero. The live 390 px action remained within the first viewport;
+there was no horizontal overflow, no undersized controls, no external runtime
+requests, and offline `/demo` reloaded successfully.
+
+Evidence:
+
+- `.factory/repair-evidence-7/local-verify/`
+- `.factory/repair-evidence-7/live-verify/`
+- `.factory/repair-evidence-7/live-verification.json`
+- `.factory/repair-evidence-7/lighthouse-local.json`
+
+### Known operator items
+
+- Submit `winget/Sociobot.SideloadReadiness/0.1.4/` to
+  `microsoft/winget-pkgs` before advertising a winget install command.
+- The macOS package is not Apple-notarized and the Windows zip is not
+  Authenticode-signed. README disclosure and GitHub OIDC Sigstore bundles
+  remain in place.
 
 ---
 
