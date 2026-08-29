@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Captured from the rendered `/` route for v0.1.2. Headings, actions, status
+Captured from the rendered `/` route for v0.1.3. Headings, actions, status
 labels, report text, and prose are included. No line exceeds 22 words. The
 literal safety statements about not unlocking devices are the allowed literal
 use of “unlock.” No other banned word appears.
@@ -50,6 +50,9 @@ use of “unlock.” No other banned word appears.
 | Linux and macOS installer | 4 | — |
 | PowerShell installer | 2 | — |
 | Checking published downloads. | 3 | — |
+| Opening the checksummed download. | 4 | — |
+| Downloads are being published. | 4 | — |
+| Open the release page for the current status. | 8 | — |
 | Make one cautious maintenance decision | 5 | — |
 | Connect | 1 | — |
 | Accept Android’s USB debugging prompt. | 5 | — |

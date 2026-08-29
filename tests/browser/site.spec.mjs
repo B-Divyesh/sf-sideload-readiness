@@ -117,6 +117,14 @@ test('@claim:local-demo the sample uses only its demo storage namespace', async 
   expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).toContain('device-6f31a0b2');
 });
 
+test('starting for real discards the demo storage namespace', async ({ page }) => {
+  await page.goto('/demo');
+  expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).not.toBeNull();
+  await page.getByRole('link', { name: 'Start for real' }).click();
+  await expect(page).toHaveURL(new URL('/', process.env.BASE_URL || 'http://127.0.0.1:4173').href);
+  expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).toBeNull();
+});
+
 test('@claim:privacy page loads and the full demo flow make no third-party requests', async ({ page }) => {
   const external = [];
   const productOrigin = new URL(process.env.BASE_URL || 'http://127.0.0.1:4173').origin;
@@ -130,7 +138,7 @@ test('@claim:privacy page loads and the full demo flow make no third-party reque
   await page.goto('/privacy');
   await page.goto('/terms');
   expect(external).toEqual([]);
-  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual(['demo:sideload-readiness']);
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([]);
 });
 
 test('@claim:fleet-review a cached valid license enables the local report queue', async ({ page }) => {
@@ -145,10 +153,42 @@ test('@claim:fleet-review a cached valid license enables the local report queue'
   await page.getByLabel('Add redacted JSON reports').setInputFiles({
     name: 'sample-report.json',
     mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify({ schema: 'sideload-readiness/v1', device: { id: 'device-test', android: '15' }, score: 83 }))
+    buffer: Buffer.from(JSON.stringify({ schema: 'sideload-readiness/v1', device: { id: 'device-1234abcd', android: '15' }, score: 83 }))
   });
   await expect(page.getByText('1 local report queued.')).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'device-test' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'device-1234abcd' })).toBeVisible();
+});
+
+test('fleet imports reject forged and invalid reports with an announced recovery step', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:sideload-readiness', 'fixture-license');
+    localStorage.setItem('sb_license_verdict:sideload-readiness', JSON.stringify({ valid: true, checked_at: Date.now() }));
+  });
+  await page.goto('/');
+  const input = page.getByLabel('Add redacted JSON reports');
+  await input.setInputFiles({
+    name: 'forged.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ schema: 'sideload-readiness/v1', device: { id: '<a href="https://example.invalid">device</a>', android: '15' }, score: 83 }))
+  });
+  await expect(page.locator('#fleet-table')).toContainText('No reports added. forged.json is not a valid redacted Sideload Readiness report.');
+  await expect(page.locator('#fleet-table a')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('fleet:reports'))).toBe('[]');
+
+  await input.setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{not json') });
+  await expect(page.locator('#fleet-table')).toContainText('Choose a JSON report exported by the CLI.');
+});
+
+test('@claim:license-retention expired license results are removed before an unavailable recheck', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('sb_license:sideload-readiness', 'fixture-license');
+    localStorage.setItem('sb_license_verdict:sideload-readiness', JSON.stringify({ valid: true, checked_at: Date.now() - 172_800_000 }));
+  });
+  await page.route('https://api.sociobot.in/api/v1/products/sideload-readiness/verify?**', route => route.abort());
+  await page.goto('/');
+  await expect(page.locator('#license-status')).toContainText('could not be checked');
+  await expect(page.locator('#fleet-tools')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('sb_license_verdict:sideload-readiness'))).toBeNull();
 });
 
 test('@claim:license-verification sends a pasted token only to Sociobot on submit', async ({ page }) => {
@@ -177,7 +217,7 @@ test('service worker activates and the demo reloads offline', async ({ page, con
   await expect(page.getByText('device-6f31a0b2')).toBeVisible();
 });
 
-test('release lookup selects an OS artifact and fails softly', async ({ browser }, testInfo) => {
+test('one selection opens the detected OS artifact and lookup failures stay recoverable', async ({ browser }, testInfo) => {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   const page = await context.newPage();
   const expectedAsset = testInfo.project.name === 'mobile'
@@ -192,15 +232,23 @@ test('release lookup selects an OS artifact and fails softly', async ({ browser 
       { name: 'sideload-readiness-windows-x86_64.zip', browser_download_url: 'https://example.invalid/release.zip' }
     ] })
   }));
+  await page.route('https://example.invalid/release.*', route => route.fulfill({
+    status: 200,
+    headers: { 'content-disposition': `attachment; filename="${expectedAsset}"` },
+    body: 'fixture archive'
+  }));
   await page.goto('/');
+  const downloadStarted = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Open release downloads' }).click();
-  await expect(page.getByRole('link', { name: `Download ${expectedAsset}` })).toHaveAttribute('href', testInfo.project.name === 'mobile' ? 'https://example.invalid/release.tar.gz' : 'https://example.invalid/release.zip');
+  const download = await downloadStarted;
+  expect(download.suggestedFilename()).toBe(expectedAsset);
 
   await page.evaluate(() => localStorage.removeItem('sideload-readiness:release'));
   await page.reload();
   await page.unroute('**/repos/B-Divyesh/sf-sideload-readiness/releases/latest');
   await page.route('**/repos/B-Divyesh/sf-sideload-readiness/releases/latest', route => route.abort());
-  await page.getByRole('link', { name: 'Open release downloads' }).click();
+  await page.getByRole('link', { name: /Download |Open release downloads/ }).click();
   await expect(page.locator('#download-status')).toContainText('Downloads are being published');
+  await expect(page.getByRole('link', { name: 'Open release downloads' })).toHaveAttribute('href', 'https://github.com/B-Divyesh/sf-sideload-readiness/releases');
   await context.close();
 });

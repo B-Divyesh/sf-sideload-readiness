@@ -153,8 +153,8 @@ test('packaging metadata keeps the CLI identity and version', async () => {
   const scoop = await read('scoop-bucket/sideload-readiness.json');
   const brew = await read('packaging/homebrew/sideload-readiness.rb');
   assert.match(cargo, /name = "sideload-readiness"/);
-  assert.match(cargo, /version = "0\.1\.2"/);
-  assert.match(nfpm, /version: 0\.1\.2/);
+  assert.match(cargo, /version = "0\.1\.3"/);
+  assert.match(nfpm, /version: 0\.1\.3/);
   assert.match(winget, /PackageVersion: 0\.1\.2/);
   assert.match(winget, /ManifestType: version/);
   assert.match(wingetInstaller, /ManifestType: installer/);
@@ -168,6 +168,15 @@ test('packaging metadata keeps the CLI identity and version', async () => {
   assert.match(brew, /on_intel do/);
   assert.match(brew, /416c47ad5bd1eadd11eaa669007e970da2b06e9218d3fc7b2930aac1c70ee699/);
   assert.match(brew, /a2fc822d6bf5e21f139672716e36645a8133203b75ea45a6831bfbbae0bc01fc/);
+});
+
+test('crate package excludes dependencies installed for site checks', async () => {
+  const { stdout } = await exec('cargo', ['package', '--list', '--allow-dirty', '--locked'], {
+    cwd: new URL('..', import.meta.url).pathname
+  });
+  assert.match(stdout, /^Cargo\.toml$/m);
+  assert.match(stdout, /^README\.md$/m);
+  assert.doesNotMatch(stdout, /(^|\/)node_modules\//m);
 });
 
 test('@claim:published-installer-paths public installer paths match one checksummed release', async () => {

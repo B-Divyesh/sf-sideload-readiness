@@ -74,8 +74,9 @@ sideload-readiness check --package com.example.approved \
   --output readiness.md
 ```
 
-The report marks a matching digest `ready` and a mismatch `blocked`. If Android
-does not expose a stable digest, the report says `needs-review`.
+The command reads the installed base APK through adb and parses its signing
+certificate locally. A matching digest is `ready`, and a mismatch is `blocked`.
+If the package or certificate cannot be read, the result is `needs-review`.
 
 Use JSON in scripts:
 

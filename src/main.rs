@@ -1,6 +1,8 @@
+use apk_info_zip::{Signature, ZipEntry};
 use clap::{Parser, Subcommand};
 use serde::Serialize;
 use std::{
+    collections::HashSet,
     fs,
     path::PathBuf,
     process::Command,
@@ -160,41 +162,53 @@ fn display_sha256(value: &str) -> String {
         .join(":")
 }
 
-fn sha256_from_line(line: &str) -> Option<String> {
-    let mut candidate = String::new();
-    for character in line.chars().chain(std::iter::once(' ')) {
-        if character.is_ascii_hexdigit() || matches!(character, ':' | '-') {
-            candidate.push(character);
-            continue;
-        }
-        if let Ok(digest) = normalize_sha256(&candidate) {
-            return Some(digest);
-        }
-        candidate.clear();
-    }
-    None
+fn signer_certificates(signature: Signature) -> Option<(u8, Vec<String>)> {
+    let (priority, certificates) = match signature {
+        Signature::V31(certificates) => (4, certificates),
+        Signature::V3(certificates) => (3, certificates),
+        Signature::V2(certificates) => (2, certificates),
+        Signature::V1(certificates) => (1, certificates),
+        _ => return None,
+    };
+    Some((
+        priority,
+        certificates
+            .into_iter()
+            .map(|certificate| certificate.sha256_fingerprint.to_ascii_lowercase())
+            .collect(),
+    ))
 }
 
-fn extract_signer_sha256(package_dump: &str) -> Option<String> {
-    let lines: Vec<_> = package_dump.lines().collect();
-    for (index, line) in lines.iter().enumerate() {
-        let lower = line.to_ascii_lowercase();
-        let signer_context = lower.contains("sha-256")
-            || lower.contains("sha256")
-            || lower.contains("signatures=")
-            || lower.contains("apkcontentsigners");
-        if signer_context {
-            if let Some(digest) = sha256_from_line(line) {
-                return Some(digest);
-            }
-            if let Some(next_line) = lines.get(index + 1) {
-                if let Some(digest) = sha256_from_line(next_line) {
-                    return Some(digest);
-                }
-            }
+fn extract_signer_sha256(apk: Vec<u8>) -> Result<String, String> {
+    let archive = ZipEntry::new(apk).map_err(|_| "the installed file is not a readable APK")?;
+    let mut schemes = archive
+        .get_signatures_other()
+        .map_err(|_| "the APK signing block could not be read")?
+        .into_iter()
+        .filter_map(signer_certificates)
+        .collect::<Vec<_>>();
+    if let Ok(signature) = archive.get_signature_v1() {
+        if let Some(scheme) = signer_certificates(signature) {
+            schemes.push(scheme);
         }
     }
-    None
+    let highest = schemes.iter().map(|(priority, _)| *priority).max();
+    let digests = schemes
+        .into_iter()
+        .filter(|(priority, _)| Some(*priority) == highest)
+        .flat_map(|(_, digests)| digests)
+        .collect::<HashSet<_>>();
+    if digests.len() != 1 {
+        return Err(if digests.is_empty() {
+            "the installed APK has no readable signing certificate".into()
+        } else {
+            "the installed APK has more than one signing certificate".into()
+        });
+    }
+    Ok(digests
+        .into_iter()
+        .next()
+        .expect("one signer digest exists"))
 }
 
 fn finding(
@@ -261,7 +275,7 @@ fn demo_report() -> Result<Report, UserError> {
     ))
 }
 
-fn adb(adb: &str, args: &[&str]) -> Result<String, String> {
+fn adb_bytes(adb: &str, args: &[&str]) -> Result<Vec<u8>, String> {
     let output = Command::new(adb)
         .args(args)
         .output()
@@ -269,7 +283,28 @@ fn adb(adb: &str, args: &[&str]) -> Result<String, String> {
     if !output.status.success() {
         return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
     }
-    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    Ok(output.stdout)
+}
+
+fn adb(adb: &str, args: &[&str]) -> Result<String, String> {
+    adb_bytes(adb, args).map(|output| String::from_utf8_lossy(&output).trim().to_string())
+}
+
+fn installed_signer_sha256(adb_bin: &str, serial: &str, package: &str) -> Result<String, String> {
+    let paths = adb(adb_bin, &["-s", serial, "shell", "pm", "path", package])?;
+    let apk_path = paths
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("package:"))
+        .find(|path| path.ends_with("/base.apk"))
+        .or_else(|| {
+            paths
+                .lines()
+                .filter_map(|line| line.trim().strip_prefix("package:"))
+                .next()
+        })
+        .ok_or_else(|| "Android did not return an installed APK path".to_string())?;
+    let apk = adb_bytes(adb_bin, &["-s", serial, "exec-out", "cat", apk_path])?;
+    extract_signer_sha256(apk)
 }
 
 fn connected_report(
@@ -341,10 +376,7 @@ fn connected_report(
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(0);
     let free_gib = free_kb as f64 / 1024.0 / 1024.0;
-    let package_dump = package.map(|p| {
-        adb(adb_bin, &["-s", serial, "shell", "dumpsys", "package", p]).unwrap_or_default()
-    });
-    let signer = package_dump.as_deref().and_then(extract_signer_sha256);
+    let signer = package.and_then(|name| installed_signer_sha256(adb_bin, serial, name).ok());
     let (signer_status, signer_detail, signer_next_step): (&str, String, String) =
         match (package, signer, expected_signer) {
         (None, _, _) => (
@@ -354,8 +386,8 @@ fn connected_report(
         ),
         (Some(_), None, _) => (
             "needs-review",
-            "No stable SHA-256 signer certificate digest was visible for the selected package.".into(),
-            "Confirm the package name and Android support, then compare the approved APK with `apksigner verify --print-certs`.".into(),
+            "The installed APK signing certificate could not be read for the selected package.".into(),
+            "Confirm the package name, reconnect the authorized device, then run the check again.".into(),
         ),
         (Some(_), Some(actual), None) => (
             "needs-review",
@@ -422,7 +454,14 @@ fn connected_report(
             "storage",
             "Free data storage",
             if free_gib >= 1.0 { "ready" } else { "blocked" },
-            format!("{free_gib:.1} GiB free on /data; the safety floor is 1.0 GiB."),
+            if free_kb >= 1024 * 1024 {
+                format!("{free_gib:.2} GiB free on /data; the 1 GiB safety floor is met.")
+            } else {
+                format!(
+                    "{free_kb} KiB free on /data, {} KiB below the 1 GiB safety floor.",
+                    1024 * 1024 - free_kb
+                )
+            },
             "Free storage before copying or applying an update.",
         ),
         finding(
@@ -522,18 +561,7 @@ mod tests {
     }
 
     #[test]
-    fn signer_digest_parser_accepts_common_dumpsys_shapes() {
-        let expected = "9a25705e391fb9276555caad4f45428ef1bc8ac4ac65aa367a76fc64bb43cc4d";
-        assert_eq!(
-            extract_signer_sha256(
-                "SigningInfo:\n APK contents signer SHA-256 digest: 9A:25:70:5E:39:1F:B9:27:65:55:CA:AD:4F:45:42:8E:F1:BC:8A:C4:AC:65:AA:36:7A:76:FC:64:BB:43:CC:4D"
-            ),
-            Some(expected.into())
-        );
-        assert_eq!(
-            extract_signer_sha256(&format!("signatures=[{expected}]")),
-            Some(expected.into())
-        );
-        assert_eq!(extract_signer_sha256("SigningInfo only"), None);
+    fn non_apk_bytes_do_not_produce_a_signer() {
+        assert!(extract_signer_sha256(b"signatures=[9a25705e]".to_vec()).is_err());
     }
 }

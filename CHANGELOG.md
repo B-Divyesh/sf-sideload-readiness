@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.3 — 2026-08-29
+
+- Read the installed APK and derive its real signing-certificate SHA-256.
+- Expire cached license verdicts after 24 hours, including during an outage.
+- Validate fleet imports and render imported values as text.
+- Discard sample data when leaving demo mode.
+- Explain storage failures at the exact 1 GiB boundary.
+- Start the detected platform download with one selection.
+- Keep installed Node dependencies out of the Rust package.
+- Replace metaphorical 404 text with a direct recovery step.
+
 ## 0.1.2 — 2026-08-29
 
 - Compare an extracted installed signer SHA-256 with an explicit approved digest.

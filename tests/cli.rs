@@ -1,6 +1,33 @@
 use std::{fs, path::PathBuf, process::Command};
 
-const SIGNER_SHA256: &str = "9a25705e391fb9276555caad4f45428ef1bc8ac4ac65aa367a76fc64bb43cc4d";
+const SIGNER_SHA256: &str = "bc5e64eab1c4b5137c0fbc5ed05850b3a148d1c41775cffa4d96eea90bdd0eb8";
+
+fn decode_base64(input: &str) -> Vec<u8> {
+    let mut output = Vec::new();
+    let mut buffer = 0_u32;
+    let mut bits = 0_u8;
+    for byte in input.bytes().filter(|byte| !byte.is_ascii_whitespace()) {
+        if byte == b'=' {
+            break;
+        }
+        let value = match byte {
+            b'A'..=b'Z' => byte - b'A',
+            b'a'..=b'z' => byte - b'a' + 26,
+            b'0'..=b'9' => byte - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => panic!("fixture contains invalid base64"),
+        };
+        buffer = (buffer << 6) | u32::from(value);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            output.push((buffer >> bits) as u8);
+            buffer &= (1 << bits) - 1;
+        }
+    }
+    output
+}
 
 fn temporary_path(label: &str, extension: &str) -> PathBuf {
     std::env::temp_dir().join(format!(
@@ -96,13 +123,34 @@ fn run_mock_device_with_args(
 fn run_mock_device_case(
     label: &str,
     extra_args: &[&str],
-    signing_info_only: bool,
+    invalid_apk: bool,
+) -> (PathBuf, PathBuf, serde_json::Value) {
+    run_mock_device_case_with_storage(label, extra_args, invalid_apk, "4000000")
+}
+
+#[cfg(unix)]
+fn run_mock_device_case_with_storage(
+    label: &str,
+    extra_args: &[&str],
+    invalid_apk: bool,
+    free_kb: &str,
 ) -> (PathBuf, PathBuf, serde_json::Value) {
     use std::os::unix::fs::PermissionsExt;
 
     let adb_path = temporary_path(label, "sh");
     let log_path = temporary_path(label, "log");
+    let apk_path = temporary_path(label, "apk");
     let output_path = temporary_path(label, "json");
+    let fixture = include_str!("fixtures/aosp-v2-signed.apk.b64");
+    fs::write(
+        &apk_path,
+        if invalid_apk {
+            b"not an apk".to_vec()
+        } else {
+            decode_base64(fixture)
+        },
+    )
+    .expect("APK fixture is written");
     fs::write(
         &adb_path,
         r#"#!/bin/sh
@@ -112,14 +160,10 @@ case "$*" in
   *ro.build.version.release) printf '15\n' ;;
   *sys.usb.config) printf 'mtp,adb\n' ;;
   *development_settings_enabled) printf '1\n' ;;
-  *'df -k /data') printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n/data 8000000 4000000 4000000 50%% /data\n' ;;
-  *'dumpsys package com.example.approved')
-    if [ "$SIDELOAD_TEST_SIGNING_INFO_ONLY" = "1" ]; then
-      printf 'SigningInfo\n'
-    else
-      printf 'SigningInfo:\n  APK contents signer SHA-256 digest: 9A:25:70:5E:39:1F:B9:27:65:55:CA:AD:4F:45:42:8E:F1:BC:8A:C4:AC:65:AA:36:7A:76:FC:64:BB:43:CC:4D\n'
-    fi
-    ;;
+  *'df -k /data') printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n/data 8000000 4000000 %s 50%% /data\n' "$SIDELOAD_TEST_FREE_KB" ;;
+  *'pm path com.example.approved') printf 'package:/data/app/~~fixture/com.example.approved/base.apk\n' ;;
+  *'exec-out cat /data/app/~~fixture/com.example.approved/base.apk') command cat "$SIDELOAD_TEST_APK" ;;
+  *'dumpsys package com.example.approved') command cat "$SIDELOAD_TEST_DUMPSYS" ;;
   *ro.build.ab_update) printf 'true\n' ;;
   *) printf '\n' ;;
 esac
@@ -140,10 +184,15 @@ esac
         .args(["--json", "--output"])
         .arg(&output_path)
         .env("SIDELOAD_TEST_ADB_LOG", &log_path)
+        .env("SIDELOAD_TEST_APK", &apk_path)
         .env(
-            "SIDELOAD_TEST_SIGNING_INFO_ONLY",
-            if signing_info_only { "1" } else { "0" },
-        );
+            "SIDELOAD_TEST_DUMPSYS",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/stock-package-signatures.txt"
+            ),
+        )
+        .env("SIDELOAD_TEST_FREE_KB", free_kb);
     let result = command.output().expect("check command starts");
     assert!(
         result.status.success(),
@@ -153,12 +202,13 @@ esac
     let report = fs::read_to_string(&output_path).expect("live report exists");
     let parsed = serde_json::from_str(&report).expect("live report is JSON");
     fs::remove_file(&output_path).expect("output can be removed");
+    fs::remove_file(&apk_path).expect("APK fixture can be removed");
     (adb_path, log_path, parsed)
 }
 
 #[cfg(unix)]
 #[test]
-fn signing_info_without_a_digest_is_never_reported_ready() {
+fn unreadable_installed_apk_is_never_reported_ready() {
     let (adb_path, log_path, report) = run_mock_device_case("signing-info-only", &[], true);
     let signer = report["findings"]
         .as_array()
@@ -170,7 +220,7 @@ fn signing_info_without_a_digest_is_never_reported_ready() {
     assert!(signer["detail"]
         .as_str()
         .expect("signer detail")
-        .contains("No stable SHA-256 signer certificate digest"));
+        .contains("installed APK signing certificate could not be read"));
     fs::remove_file(adb_path).expect("mock adb can be removed");
     fs::remove_file(log_path).expect("mock log can be removed");
 }
@@ -194,7 +244,11 @@ fn claim_signer_identity_is_extracted_and_compared() {
     assert!(signer["detail"]
         .as_str()
         .expect("signer detail")
-        .contains("9A:25:70:5E"));
+        .contains("BC:5E:64:EA"));
+    let commands = fs::read_to_string(&log_path).expect("adb calls were logged");
+    assert!(commands.contains("shell pm path com.example.approved"));
+    assert!(commands.contains("exec-out cat /data/app/~~fixture/com.example.approved/base.apk"));
+    assert!(!commands.contains("dumpsys package"));
     fs::remove_file(adb_path).expect("mock adb can be removed");
     fs::remove_file(log_path).expect("mock log can be removed");
 
@@ -232,6 +286,26 @@ fn claim_exported_device_id_is_redacted() {
 
 #[cfg(unix)]
 #[test]
+fn storage_below_the_floor_reports_the_exact_shortfall() {
+    let (adb_path, log_path, report) =
+        run_mock_device_case_with_storage("storage-boundary", &[], false, "1048575");
+    let storage = report["findings"]
+        .as_array()
+        .expect("findings")
+        .iter()
+        .find(|finding| finding["id"] == "storage")
+        .expect("storage finding");
+    assert_eq!(storage["status"], "blocked");
+    assert!(storage["detail"]
+        .as_str()
+        .expect("storage detail")
+        .contains("1 KiB below the 1 GiB safety floor"));
+    fs::remove_file(adb_path).expect("mock adb can be removed");
+    fs::remove_file(log_path).expect("mock log can be removed");
+}
+
+#[cfg(unix)]
+#[test]
 fn claim_device_checks_are_read_only_and_non_mutating() {
     let (adb_path, log_path, _) = run_mock_device("claim-read-only");
     let commands = fs::read_to_string(&log_path).expect("adb calls were logged");
@@ -239,7 +313,8 @@ fn claim_device_checks_are_read_only_and_non_mutating() {
     assert!(commands.contains("shell getprop"));
     assert!(commands.contains("shell settings get"));
     assert!(commands.contains("shell df -k /data"));
-    assert!(commands.contains("shell dumpsys package"));
+    assert!(commands.contains("shell pm path"));
+    assert!(commands.contains("exec-out cat"));
     for forbidden in [
         " install",
         " sideload",
@@ -247,6 +322,7 @@ fn claim_device_checks_are_read_only_and_non_mutating() {
         " unlock",
         " settings put",
         " push ",
+        " pull ",
     ] {
         assert!(
             !commands.contains(forbidden),

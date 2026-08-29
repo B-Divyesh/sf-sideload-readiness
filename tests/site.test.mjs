@@ -20,7 +20,7 @@ test('npm clean installs are locked to the declared package', async () => {
 test('browser claim commands install their declared clean-clone prerequisites', async () => {
   const claims = JSON.parse(await getRoot('.factory/claims.json'));
   const browserClaims = claims.filter(({ test: command }) => command.includes('test:browser'));
-  assert.equal(browserClaims.length, 4);
+  assert.equal(browserClaims.length, 5);
   for (const claim of browserClaims) assert.match(claim.test, /^npm ci && npm run test:browser/);
 });
 
@@ -50,6 +50,13 @@ test('site has required routes and metadata', async () => {
     ['/demo', '/privacy', '/terms']
   );
   assert.deepEqual(config.responseOverrides['404'], { rewrite: '/404.html' });
+});
+
+test('server 404 uses direct recovery copy', async () => {
+  const notFound = await get('404.html');
+  assert.match(notFound, /Page not found/);
+  assert.match(notFound, /Check the address or return to the readiness check\./);
+  assert.doesNotMatch(notFound, /concrete edge|report path has ended/i);
 });
 
 test('service worker replaces older offline shells during updates', async () => {

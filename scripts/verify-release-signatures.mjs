@@ -7,7 +7,7 @@ import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
 const repository = 'B-Divyesh/sf-sideload-readiness';
-const tag = process.argv[2] || 'v0.1.2';
+const tag = process.argv[2] || 'v0.1.3';
 const issuer = 'https://token.actions.githubusercontent.com';
 const workflowIdentity = `^https://github.com/${repository}/.github/workflows/(release|sign-release)\\.yml@`;
 const releaseResponse = await fetch(`https://api.github.com/repos/${repository}/releases/tags/${tag}`, {
