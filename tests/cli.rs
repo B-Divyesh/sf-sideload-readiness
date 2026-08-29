@@ -135,7 +135,8 @@ fn claim_demo_uses_no_adb_and_writes_a_temporary_report() {
 
 #[cfg(unix)]
 #[test]
-fn automatic_demo_uses_an_exclusive_private_file_and_rejects_temp_collisions() {
+// @claim:private-demo-file
+fn claim_automatic_demo_file_is_private_and_never_reuses_a_name() {
     let directory = temporary_path("automatic-demo-private", "dir");
     fs::create_dir(&directory).expect("isolated temp directory is created");
     let victim = directory.join("victim.txt");
@@ -187,7 +188,8 @@ fn automatic_demo_uses_an_exclusive_private_file_and_rejects_temp_collisions() {
 }
 
 #[test]
-fn explicit_demo_output_replaces_the_requested_file_as_documented() {
+// @claim:explicit-output-replacement
+fn claim_explicit_demo_output_replaces_the_requested_file() {
     let output = temporary_path("explicit-demo-overwrite", "md");
     fs::write(&output, "replace me\n").expect("existing explicit output is created");
     let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))

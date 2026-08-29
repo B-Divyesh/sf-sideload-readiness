@@ -24,6 +24,23 @@ test('browser claim commands install their declared clean-clone prerequisites', 
   for (const claim of browserClaims) assert.match(claim.test, /^npm ci && npm run test:browser/);
 });
 
+test('published CLI file-safety promises have one tagged public-command claim each', async () => {
+  const claims = JSON.parse(await getRoot('.factory/claims.json'));
+  const cli = await getRoot('tests/cli.rs');
+  const expected = [
+    ['private-demo-file', 'claim_automatic_demo_file_is_private_and_never_reuses_a_name'],
+    ['explicit-output-replacement', 'claim_explicit_demo_output_replaces_the_requested_file']
+  ];
+  for (const [id, testName] of expected) {
+    const matching = claims.filter(claim => claim.id === id);
+    assert.equal(matching.length, 1, `${id} is declared once`);
+    assert.equal(matching[0].test, `cargo test --test cli ${testName} -- --exact`);
+    const tag = new RegExp(`@claim:${id}`, 'g');
+    assert.equal([...cli.matchAll(tag)].length, 1, `${id} has one test tag`);
+    assert.match(cli, new RegExp(`@claim:${id}\\nfn ${testName}`));
+  }
+});
+
 test('the sample report source uses the isolated demo namespace', async () => {
   const app = await get('app.js');
   assert.match(app, /Try it with sample data/);
