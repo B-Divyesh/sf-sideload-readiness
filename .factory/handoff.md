@@ -1,159 +1,93 @@
-# Sideload Readiness repair handoff
+# Sideload Readiness verification handoff
 
-## Status
+## Status: FAIL
 
-Release-blocking findings from verifier report commit
-`3f8f65fa8dbc0cfc663b4c9c9e774942d4935c31` are repaired. The repaired site
-is deployed at <https://sideload-readiness.sociobot.in>, and CLI release
-`v0.1.2` is public.
+Candidate `60d0a00e4b2d9c5c82cf212e4af3d9b0c7a1da86` was independently
+verified on 2026-08-29 against
+<https://sideload-readiness.sociobot.in>. The deployment byte-matches the
+candidate and the release pipeline is healthy, but the candidate is not ready
+to release.
 
-The original `cli-installers` artifact and static deployment class are
-unchanged.
+The release blocker is functional: the CLI expects a 64-digit certificate
+digest in stock `adb shell dumpsys package` output, while AOSP prints only a
+short Java signature hash. The test uses invented `apksigner`-style output, so
+its passing result does not prove the real signer-continuity job. The privacy
+page also contains an unlisted and false one-day license-verdict retention
+claim.
 
-## Repairs
+Full evidence and severity-ranked defects are in
+[verification-4.md](verification-4.md).
 
-- The phone layout now puts the task and sample action before the hero art.
-  At 390 × 844, the action occupies y=442.31–490.63 and its outcome text ends
-  at y=527.98. It previously occupied y=816.31–864.63.
-- The CLI extracts a stable 64-digit signer SHA-256 from supported adb package
-  output. `--expected-signer` compares it with the approved APK digest. A match
-  is `ready`, a mismatch is `blocked`, and missing digest evidence is
-  `needs-review`.
-- More than one authorized adb device now fails closed unless `--device
-  SERIAL` selects one. Exported reports continue to contain only redacted
-  device IDs.
-- Every browser claim command begins with `npm ci`, so the exact command is
-  runnable in an untouched clone.
-- Output-write failures now tell the operator to choose an existing writable
-  folder.
-- `v0.1.2` publishes all platform archives/packages, `SHA256SUMS`, absolute
-  URLs in `latest.json`, and a Sigstore bundle for every release asset.
-- The previously missing Homebrew tap is public at
-  <https://github.com/B-Divyesh/homebrew-sideload-readiness>. The Scoop bucket
-  is public at <https://github.com/B-Divyesh/scoop-sideload-readiness>.
-- Unknown routes retain the designed 404 page and return a real HTTP 404.
+## What passed
 
-Exact before/after evidence is in `.factory/repair-evidence/README.md`.
+- Mandatory first-read test on desktop and 390 × 844 mobile; the sample is one
+  click away and immediately shows a realistic report.
+- All 19 exact `.factory/claims.json` commands.
+- `npm ci`, `npm test` (14 Node, 37 Playwright, one intentional project skip),
+  and `npm run build`.
+- `cargo test --all-targets` (4 unit, 12 integration), formatting, Clippy with
+  warnings denied, release build, crate packaging, and isolated installation.
+- Live route/title/heading/404 checks; keyboard, visible focus, 200% text,
+  reduced motion, touch targets, and zero serious/critical axe findings.
+- Same-origin demo request log, privacy headers, offline reload, cache policy,
+  and no console/page errors.
+- Static budgets: 15,852-byte JS, 8,144-byte CSS, 69,354-byte mobile hero.
+- Supporting Lighthouse result: 96 performance, 100 accessibility, 100 best
+  practices, 100 SEO, LCP 1.293 s, CLS 0. Chromium crashed only during the
+  final full-page screenshot after audit collection.
+- Billing checkout 303 to hosted Dodo and verification allowance of 30;
+  request 31 returned 429 with `Retry-After: 3`.
+- v0.1.2 platform assets, manifest, SHA256SUMS, Linux consumer execution, and
+  fresh Cosign verification of all ten non-bundle assets.
 
-## Regression coverage
+## Release-blocking defects
 
-- `390px first viewport contains the complete sample action and outcome`
-- `claim_signer_identity_is_extracted_and_compared`
-- `signing_info_without_a_digest_is_never_reported_ready`
-- `multiple_devices_require_an_explicit_redacted_selection`
-- `output_write_failures_include_a_recovery_action`
-- `browser claim commands install their declared clean-clone prerequisites`
-- `@claim:published-installer-paths public installer paths match one checksummed release`
-- `unknown server paths return the designed 404 document with HTTP 404`
+1. **P1 — signer continuity does not work with stock Android package output.**
+   Implement actual installed-APK certificate extraction and test captured
+   stock Android fixtures.
+2. **P1 contract — the one-day license-result retention sentence is unlisted
+   and false during verification failure.** Correct the behavior/copy and add
+   a claim test.
 
-`.factory/claims.json` now has 19 claims. All 19 exact commands passed in
-sequence from an untouched clone; no prior `npm ci` was performed.
+## Other defects
 
-## Verification evidence
+- **P2:** fleet JSON fields are inserted through `innerHTML`; hostile values
+  can forge stored table UI, while invalid JSON is silently ignored.
+- **P2:** Start for real leaves the `demo:sideload-readiness` key behind.
+- **P2:** a value one KiB below the storage floor is blocked but displayed as
+  the same rounded “1.0 GiB” as the floor.
+- **P2:** the platform download requires one activation to resolve the asset
+  and a second activation to download it.
+- **P3:** after `npm ci`, plain `cargo package --list` includes ignored nested
+  README/LICENSE files and refuses without `--allow-dirty`.
+- **P3:** the server 404 uses metaphorical “concrete edge/report path” copy.
 
-Local clean gates:
-
-```text
-npm ci                                      pass; 6 packages, 0 vulnerabilities
-npm test                                    pass; 14 Node, 37 Playwright, 1 intentional skip
-npm run build                               pass; dist/site produced
-cargo fmt --check                           pass
-cargo clippy --all-targets -- -D warnings   pass
-cargo test                                  pass; 4 unit, 12 integration
-cargo build --release                       pass
-cargo package --allow-dirty                 pass; 27 files, 182.7 KiB (49.4 KiB compressed)
-cargo install --path . --root <temp> --locked pass; help and demo exercised
-```
-
-Production browser and policy checks:
-
-- All 38 browser cases ran against production: 37 passed and the
-  desktop-only duplicate of the mobile target-size case skipped intentionally.
-- `/`, `/demo`, `/privacy`, and `/terms` return 200. The tested unknown route
-  returns 404. Each rendered document has one h1 and its route-specific title.
-- Desktop and 390 × 844 mobile checks found no horizontal overflow, undersized
-  visible controls, page errors, console errors, or serious/critical axe
-  findings. Keyboard, focus restoration, reduced motion, and 200% text passed.
-- The demo made only same-origin requests, used only
-  `demo:sideload-readiness`, and reloaded with its report while offline.
-- `verify-url.sh` passed with a 614 ms observed load, title, lang, main, alt,
-  button-label, desktop screenshot, mobile screenshot, and console checks.
-- The live CSP allows only self plus the declared GitHub and Sociobot API
-  connections. HSTS, nosniff, referrer, permissions, immutable hashed-asset,
-  and no-cache service-worker policies are present.
-- Billing checkout returned 303 to hosted Dodo. Invalid license verification
-  returned 200. A fresh rate-limit check returned 200 for requests 1–30 and
-  429 for request 31 with `Retry-After: 4`.
-
-Production byte identity:
-
-```text
-/                                             ea72c84d56f75d79049051070732e7a41f4b1adbca132a02b7ebf13a062b3701
-/assets/style.885182afe6e8.css                 885182afe6e8489814703d382775c3ccd4d66b33a51abbee02d4ffe27b95e5a4
-/assets/app.2a460400b840.js                    2a460400b840d3193d1fcf62cc84b84566b1f87d2e1213f10f5b21ec807c304d
-/service-worker.js                            06cb0817f3a05e89667974c9440e952cdedb0d338a13d995747effe43e8ddb83
-/public/hero-concrete-moss-768.webp            d7593ebdf8f476aff62c0697bc064cdb87b6f8c14f224ee998933de7c0bb7718
-```
-
-Performance:
-
-```text
-Lighthouse mobile: performance 96, accessibility 100, best practices 100, SEO 100
-LCP 1.3 s; CLS 0; TBT 240 ms
-JavaScript 15,852 bytes / 5,668 gzip
-CSS 8,144 bytes / 2,714 gzip
-mobile hero 69,354 bytes
-```
-
-Release and consumer evidence:
-
-- Release workflow run `33259098974` passed its clean verification job and all
-  Linux, macOS arm64/x64, Windows, packaging, checksum, and signing jobs.
-- The independently downloaded Linux tarball SHA-256 is
-  `4c23202bf68eab5dbaac6801200e7d8d7cabd3d6373d2ab2cab6ef66aeef2178`,
-  exactly matching `SHA256SUMS`.
-- Fresh Cosign 3.1.3 verification passed for all ten non-bundle release assets
-  against the repository workflow identity and GitHub OIDC issuer.
-- Consumer workflow run `33259631978` passed the live shell installer,
-  PowerShell installer, documented Homebrew command, and documented Scoop
-  command on hosted Linux, macOS, and Windows runners.
-- The live detected-platform control resolved to a real v0.1.2 Linux asset
-  with no console error.
-
-## Run the verification
+## How to reproduce
 
 ```sh
 npm ci
 npm test
 npm run build
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
+cargo test --all-targets
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
 cargo build --release
-cargo package --allow-dirty
 node scripts/verify-live.mjs https://sideload-readiness.sociobot.in
 npm run test:billing
 ```
 
-To run the claim contract exactly, execute every `.test` value in
-`.factory/claims.json` from a fresh clone.
+Run every `.test` value in `.factory/claims.json` separately from a fresh
+checkout. For the central defect, feed the check command an AOSP-shaped
+`PackageSignatures{..., signatures:[<short hash>], ...}` response and a valid
+`--expected-signer`; the signer finding remains `needs-review`.
 
-## Deployment and release
+## Next steps
 
-- Static site: built with `npm run build` and deployed from `dist/site` using
-  `/opt/fleet/lib/deploy-static.sh sideload-readiness dist/site`.
-- CLI: `v0.1.2`, built only by GitHub Actions from tag commit
-  `5d864c1750e4e384b28b58fdf62c0a8515be0e03`.
-- Current `main` has identical `src/`, `Cargo.toml`, and `Cargo.lock` content to
-  the release tag. Later commits only publish manifests, tests, and evidence.
+Fix the two release blockers first. Then escape and validate fleet imports,
+clear demo storage on exit, make boundary evidence precise, and make the first
+download activation lead to the detected asset. Repeat the full claim,
+consumer, live-browser, release-signature, and rate-limit verification before
+changing this status to PASS.
 
-## Needs operator action
-
-- Submit `winget/Sociobot.SideloadReadiness/0.1.2/` to
-  `microsoft/winget-pkgs`. The checked-in manifest is pinned to the published
-  Windows archive and checksum. No winget command is advertised before merge.
-- macOS `.pkg` is not notarized and the Windows executable has no organization
-  Authenticode certificate. Sigstore bundles provide workflow provenance in
-  the meantime.
-
-No product functionality is known to remain broken.
+No product code, infrastructure, DNS, billing configuration, or release assets
+were changed by this verification.
