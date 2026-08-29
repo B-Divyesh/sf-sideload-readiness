@@ -1,65 +1,60 @@
-# Handoff — perfection-loop round 1
+# Handoff — independent verification 8
 
-## Status: complete
+## Status: PASS
 
-All six findings in `.factory/review-1.md` are fixed and deployed. There are no
-earlier `.factory/review-*.md` or `.factory/polish-*.md` records. The product
-keeps its CLI-installer artifact class and concrete-and-moss visual system.
+Candidate `a0a3d04302529fdaadf731bd38381af9aa9296d5` passes the researched brief
+and work-order acceptance contract at
+<https://sideload-readiness.sociobot.in>. Fresh verification found the live
+deployment healthy and byte-identical to the candidate production build. No
+product code was modified.
 
-## What changed
+The complete evidence and defect accounting are in
+`.factory/verification-8.md`.
 
-- The first-screen action now opens the isolated `/?demo=1` sample directly.
-  Reset and exit preserve a seeded real-data sentinel.
-- The reviewed install, process, and scope headings now name their content.
-- Each real route updates its title, description, canonical, Open Graph, and
-  Twitter metadata. The 404 page has complete metadata and returns HTTP 404.
-- `.factory/claims.json` now has 27 claims. New public-path tests cover unreadable
-  signer input, every diagnostic, example parity, current platform signing
-  status, and the payment-provider boundary.
-- The Sigstore claim now provisions checksum-pinned Cosign 2.4.1 and verifies
-  every payload and manifest in the current public release.
-- The catalog description is a 74-character, verb-first sentence.
+## What was verified
 
-## Verification
+- All 27 commands in `.factory/claims.json` passed individually before other
+  product inspection.
+- The cold first screen states the job, audience, first action, and offers the
+  required one-click isolated sample.
+- `npm ci`, full Node/Playwright tests, Cargo tests, formatting, Clippy,
+  optimized build, Cargo packaging, and the exact site build passed.
+- The packaged CLI installed into a clean consumer and handled normal,
+  boundary, invalid-input, blocked-signer, missing-adb, and write-error paths.
+- The v0.1.4 Linux release matched its published SHA-256 and ran successfully;
+  the complete cross-platform release and Sigstore contract passed.
+- The complete browser suite passed locally and against production on desktop
+  and 390 px mobile, including keyboard, focus, axe, 200% text, reduced motion,
+  demo isolation, offline reload, and service-worker cache replacement.
+- Live CSP/security/cache headers, privacy request logs, link targets, and
+  local-storage boundaries passed.
+- The Sociobot verify endpoint allowed 30 requests from one client, then
+  returned 429 with `Retry-After: 4`.
+- Mobile Lighthouse scored 97 performance and 100 for accessibility, best
+  practices, and SEO; LCP was 1.304 s, TBT 189 ms, and CLS 0.
 
-From clean clone `/tmp/sideload-readiness-clean-lizb0K` at
-`df812ebe55dec07712541d3dd800be99b4378b0c`:
+## Run the verification
 
-- `npm ci`
-- `npm test`: 21 Node tests passed; 67 Playwright tests passed; one expected
-  mobile-project skip
-- `cargo test --all-targets`: 21 passed
-- `cargo fmt --check`: passed
-- `cargo clippy --all-targets -- -D warnings`: passed
-- `npm run build`: passed and created `dist/site`
-- All 27 claim commands from `.factory/claims.json`: passed individually
+```sh
+npm ci
+npm test
+npm run build
+cargo test --all-targets
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo build --release
+cargo package --locked
+node scripts/verify-live.mjs https://sideload-readiness.sociobot.in
+BASE_URL=https://sideload-readiness.sociobot.in npm run test:browser
+```
 
-Local Lighthouse scored 100 performance, 100 accessibility, 100 best
-practices, and 100 SEO. LCP was 1.5 s, CLS 0, and TBT 0 ms. Live Lighthouse
-scored 100/100/100/100 with LCP 1.2 s, CLS 0, and TBT 40 ms. Initial JavaScript
-is 7,399 bytes gzip and CSS is 2,732 bytes gzip.
+Run every command in `.factory/claims.json` separately as the release claim
+gate. The demo entries are `/?demo=1`, `/demo`, and
+`sideload-readiness demo`.
 
-## Deployment and live verification
+## Defects and next steps
 
-Azure Static Web Apps deployment `f9bc029b-7707-470a-8316-e87b2fc40482`
-succeeded at <https://sideload-readiness.sociobot.in>. After deployment:
-
-- the complete 68-test browser suite passed against production (67 passed, one
-  expected project skip);
-- `/`, `/?demo=1`, `/demo`, `/privacy`, and `/terms` returned 200;
-- an unknown route returned 404 with the designed page;
-- deployed HTML, hashed JS/CSS, service worker, and hero image byte-matched the
-  local production build;
-- every route had one H1 and zero serious/critical axe findings;
-- there were no console errors, external demo requests, horizontal overflow,
-  or undersized mobile controls;
-- demo reset/exit isolation and offline reload passed.
-
-Evidence is in `.factory/polish-evidence-1/`. The finding-by-finding map is
-`.factory/polish-1.md`.
-
-## Known gaps and next steps
-
-None for this work order. The existing v0.1.4 CLI release remains current; this
-repair changes the site, documentation, and verification only, so no binary
-rebuild was needed.
+No release-blocking, high, medium, or low product defect was found. No repair or
+deployment action is required. A physical Android handset was unavailable in
+the disposable verifier; the device matrix was exercised with the recording
+fake adb and real signed-APK fixture.
