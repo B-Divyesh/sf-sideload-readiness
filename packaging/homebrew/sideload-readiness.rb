@@ -1,17 +1,17 @@
 class SideloadReadiness < Formula
   desc "Read-only Android sideload readiness checks"
   homepage "https://sideload-readiness.sociobot.in"
-  version "0.1.2"
+  version "0.1.3"
   license "MIT"
 
   on_arm do
-    url "https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.2/sideload-readiness-macos-aarch64.tar.gz"
-    sha256 "416c47ad5bd1eadd11eaa669007e970da2b06e9218d3fc7b2930aac1c70ee699"
+    url "https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.3/sideload-readiness-macos-aarch64.tar.gz"
+    sha256 "15df990cae82f96df4a5d89e8fdc692acf400d2e31bbf153b92ee25fdde7085f"
   end
 
   on_intel do
-    url "https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.2/sideload-readiness-macos-x86_64.tar.gz"
-    sha256 "a2fc822d6bf5e21f139672716e36645a8133203b75ea45a6831bfbbae0bc01fc"
+    url "https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.3/sideload-readiness-macos-x86_64.tar.gz"
+    sha256 "90b43cfd234f0dfe65fe2b438d4e96fe32bccd226ad39759bd9c887a8eb15b35"
   end
 
   def install
