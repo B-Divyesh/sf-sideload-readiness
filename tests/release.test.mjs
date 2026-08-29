@@ -147,27 +147,27 @@ test('@claim:release-manifest latest.json contains real per-platform release ass
 test('packaging metadata keeps the CLI identity and version', async () => {
   const cargo = await read('Cargo.toml');
   const nfpm = await read('packaging/nfpm.yaml');
-  const winget = await read('winget/Sociobot.SideloadReadiness/0.1.3/Sociobot.SideloadReadiness.yaml');
-  const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.3/Sociobot.SideloadReadiness.installer.yaml');
-  const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.3/Sociobot.SideloadReadiness.locale.en-US.yaml');
+  const winget = await read('winget/Sociobot.SideloadReadiness/0.1.4/Sociobot.SideloadReadiness.yaml');
+  const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.4/Sociobot.SideloadReadiness.installer.yaml');
+  const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.4/Sociobot.SideloadReadiness.locale.en-US.yaml');
   const scoop = await read('scoop-bucket/sideload-readiness.json');
   const brew = await read('packaging/homebrew/sideload-readiness.rb');
   assert.match(cargo, /name = "sideload-readiness"/);
   assert.match(cargo, /version = "0\.1\.4"/);
   assert.match(nfpm, /version: 0\.1\.4/);
-  assert.match(winget, /PackageVersion: 0\.1\.3/);
+  assert.match(winget, /PackageVersion: 0\.1\.4/);
   assert.match(winget, /ManifestType: version/);
   assert.match(wingetInstaller, /ManifestType: installer/);
   assert.match(wingetInstaller, /sideload-readiness-windows-x86_64\.zip/);
-  assert.match(wingetInstaller, /c99db04e534393c165c895772ca50db74f29bc53ddafa17fce5d84e137b82e06/);
+  assert.match(wingetInstaller, /fc7191f6c755b94c0d7cbb552975acd0baab91075b9b57a681c03d374a465747/);
   assert.match(wingetLocale, /ManifestType: defaultLocale/);
-  assert.match(scoop, /"version": "0\.1\.3"/);
-  assert.match(scoop, /"hash": "c99db04e534393c165c895772ca50db74f29bc53ddafa17fce5d84e137b82e06"/);
-  assert.match(brew, /version "0\.1\.3"/);
+  assert.match(scoop, /"version": "0\.1\.4"/);
+  assert.match(scoop, /"hash": "fc7191f6c755b94c0d7cbb552975acd0baab91075b9b57a681c03d374a465747"/);
+  assert.match(brew, /version "0\.1\.4"/);
   assert.match(brew, /on_arm do/);
   assert.match(brew, /on_intel do/);
-  assert.match(brew, /15df990cae82f96df4a5d89e8fdc692acf400d2e31bbf153b92ee25fdde7085f/);
-  assert.match(brew, /90b43cfd234f0dfe65fe2b438d4e96fe32bccd226ad39759bd9c887a8eb15b35/);
+  assert.match(brew, /b5ab461d53ab829c23fd56da364ed5369461aaf6f0178f5edf3848c492288330/);
+  assert.match(brew, /e3a7c02fd347494669d24c46494cb69bbec1c16871eac267acb717c89ce339fb/);
 });
 
 test('crate package excludes dependencies installed for site checks', async () => {
@@ -204,8 +204,8 @@ test('@claim:published-installer-paths public installer paths match one checksum
     return [filename, hash];
   }));
   for (const [asset, hash] of [
-    ['sideload-readiness-macos-aarch64.tar.gz', '15df990cae82f96df4a5d89e8fdc692acf400d2e31bbf153b92ee25fdde7085f'],
-    ['sideload-readiness-macos-x86_64.tar.gz', '90b43cfd234f0dfe65fe2b438d4e96fe32bccd226ad39759bd9c887a8eb15b35'],
+    ['sideload-readiness-macos-aarch64.tar.gz', 'b5ab461d53ab829c23fd56da364ed5369461aaf6f0178f5edf3848c492288330'],
+    ['sideload-readiness-macos-x86_64.tar.gz', 'e3a7c02fd347494669d24c46494cb69bbec1c16871eac267acb717c89ce339fb'],
     ['sideload-readiness-windows-x86_64.zip', scoop.hash]
   ]) {
     assert.equal(checksums.get(asset), hash);

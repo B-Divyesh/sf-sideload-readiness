@@ -1,0 +1,64 @@
+{
+  "baseURL": "https://sideload-readiness.sociobot.in",
+  "identity": {
+    "/": "cc002745023575ea2df46404689882f7d3fcc5cedafc4c3a9d1f7a90445ba046",
+    "/assets/style.153fe0711a98.css": "153fe0711a98b64e753dd98d8ab0b8a4826a45def135d3608bf4597d2741c63a",
+    "/assets/app.d51a46aa567e.js": "d51a46aa567e181cd797addfbf914dfd7d7faf2d48133eed24be27cc12dd5eba",
+    "/service-worker.js": "ac636811e7c688a51c7bdc98d2eb3bd0fc8f137e18cee030cfe39c79f7419d8b",
+    "/public/hero-concrete-moss-768.webp": "d7593ebdf8f476aff62c0697bc064cdb87b6f8c14f224ee998933de7c0bb7718"
+  },
+  "routes": {
+    "/": {
+      "status": 200,
+      "title": "Sideload Readiness — Check Android update safety",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/demo": {
+      "status": 200,
+      "title": "Demo — Sideload Readiness",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/privacy": {
+      "status": 200,
+      "title": "Privacy — Sideload Readiness",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/terms": {
+      "status": 200,
+      "title": "Terms — Sideload Readiness",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    },
+    "/unambiguously-missing-qa-route": {
+      "status": 404,
+      "title": "Not found — Sideload Readiness",
+      "h1": 1,
+      "seriousOrCriticalAxe": 0
+    }
+  },
+  "consoleErrors": [],
+  "expectedNotFoundNetworkErrors": 1,
+  "mobile": {
+    "firstViewport": {
+      "sampleAction": {
+        "x": 16,
+        "y": 442.3125,
+        "width": 243.671875,
+        "height": 48.3125
+      },
+      "actionOutcome": {
+        "x": 16,
+        "y": 505.625,
+        "width": 336.171875,
+        "height": 22.359375
+      }
+    },
+    "noHorizontalOverflow": true,
+    "undersizedTargets": [],
+    "externalRequests": []
+  },
+  "offline": true
+}

@@ -1,0 +1,9 @@
+PackageIdentifier: Sociobot.SideloadReadiness
+PackageVersion: 0.1.4
+PackageLocale: en-US
+Publisher: Sociobot
+PackageName: Sideload Readiness
+License: MIT
+ShortDescription: Read-only Android sideload readiness checks
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0
