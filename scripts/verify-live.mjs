@@ -4,16 +4,23 @@ import AxeBuilder from '@axe-core/playwright';
 
 const baseURL = process.argv[2] || 'https://sideload-readiness.sociobot.in';
 const browser = await chromium.launch();
-const evidence = { baseURL, routes: {}, consoleErrors: [], mobile: {}, offline: false };
+const evidence = { baseURL, routes: {}, consoleErrors: [], expectedNotFoundNetworkErrors: 0, mobile: {}, offline: false };
 
 try {
   const desktop = await browser.newContext({ ...devices['Desktop Chrome'] });
   const page = await desktop.newPage();
+  let checkingIntentionalNotFound = false;
   page.on('pageerror', error => evidence.consoleErrors.push(String(error)));
   page.on('console', message => {
-    if (message.type() === 'error') evidence.consoleErrors.push(message.text());
+    const text = message.text();
+    if (checkingIntentionalNotFound && message.type() === 'error' && /Failed to load resource: the server responded with a status of 404/.test(text)) {
+      evidence.expectedNotFoundNetworkErrors += 1;
+      return;
+    }
+    if (message.type() === 'error') evidence.consoleErrors.push(text);
   });
   for (const route of ['/', '/demo', '/privacy', '/terms', '/unambiguously-missing-qa-route']) {
+    checkingIntentionalNotFound = route === '/unambiguously-missing-qa-route';
     const response = await page.goto(`${baseURL}${route}`, { waitUntil: 'networkidle' });
     const violations = (await new AxeBuilder({ page }).analyze()).violations
       .filter(item => ['serious', 'critical'].includes(item.impact));
@@ -26,6 +33,7 @@ try {
     assert.equal(response.status(), route === '/unambiguously-missing-qa-route' ? 404 : 200);
     assert.equal(evidence.routes[route].h1, 1);
     assert.equal(violations.length, 0);
+    checkingIntentionalNotFound = false;
   }
   await page.goto(baseURL);
   await page.keyboard.press('Tab');
