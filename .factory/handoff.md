@@ -1,89 +1,62 @@
-# Handoff — perfection loop round 2
+# Verification handoff — work order sideload-readiness-verify-9
 
 ## Status: PASS
 
-All findings in `.factory/review-1.md` and `.factory/review-2.md` are closed.
-The repaired product commit is `019f415112469b37f69c5ff905fdd2abcbc8cb72`.
-Azure Static Web Apps deployment `fd61317b-45c3-4fe9-b07c-3d0e1f143c63`
-succeeded at <https://sideload-readiness.sociobot.in>.
+Candidate `6ce78c6b2ab5477c0e60ed81f6189ef73cacba10` is accepted at
+<https://sideload-readiness.sociobot.in>. Fresh evidence shows the deployment
+byte-matches the candidate's production site build. No release-blocking, high,
+medium, or low defect was found. Product code was not changed.
 
-## What changed
+## What was verified
 
-- Added `browser-demo-no-device` to `.factory/claims.json`. Its Playwright
-  test instruments WebUSB and Web Serial across demo entry, reset, reload, and
-  exit. Production headers also disable both APIs.
-- Added `release-checksums`. Its test fetches the current public release,
-  downloads all eight tar, zip, pkg, deb, and rpm archives, and recomputes each
-  published SHA-256.
-- Renamed the unclear headings to `Sample readiness report` and `Fleet report
-  review` without changing the concrete-and-moss visual system.
-- Updated the copy audit, demo documentation, and the 67-character verb-first
-  catalog description.
-- Retained the first-screen `/?demo=1` action, isolated demo namespace,
-  route-specific metadata, focus restoration, designed 404, legal routes,
-  mobile layout, installer matrix, and CLI behavior.
+- Mandatory first-read gate passes on desktop and 390 px mobile. The first
+  screen explains the job, audience, and first action, and provides the
+  one-click isolated sample demo.
+- All 29 commands in `.factory/claims.json` passed exactly as declared.
+- `npm ci`, `npm test`, `npm run build`, Rust formatting, Clippy with warnings
+  denied, all Rust tests, release build, and crate packaging passed.
+- A clean consumer install exercised CLI help/version, Markdown and JSON demo
+  output, private files, signer validation, missing adb, output failure,
+  storage boundary, signer mismatch, unauthorized devices, and multi-device
+  selection.
+- Release v0.1.4 has the required platform assets, checksums, manifests, and
+  Sigstore bundles. The independently downloaded Linux archive matched SHA-256
+  `1797f1b5a1ca905b749b495bd2fd3982c0c3b408dc3494aaeaf90507835888a0`
+  and ran successfully.
+- The live 70-case browser matrix passed 69 tests with one expected
+  project-only skip. Axe found no serious/critical issue; console/page errors
+  were zero; keyboard, focus, reduced motion, 200% text, touch size, mobile
+  overflow, history, route metadata, 404, and link checks passed.
+- Browser request logs confirmed the demo is same-origin and isolated. A stale
+  service-worker cache was replaced and `/demo` reloaded offline.
+- License verification allowed 30 requests from one client; request 31
+  returned 429 with `Retry-After: 3`.
+- Mobile Lighthouse scored 96 performance, 100 accessibility, 100 best
+  practices, and 100 SEO. LCP was 1.31 s and CLS was 0.
 
-## Verification evidence
+The full evidence and defect accounting are in
+`.factory/verification-9.md`. Captures, URL verification, and Lighthouse output
+are under `.factory/verification-evidence-9/`.
 
-The clean clone was `/tmp/sideload-readiness-polish2-clean-MqDINi` at
-`019f415112469b37f69c5ff905fdd2abcbc8cb72`.
-
-```text
-Every .factory/claims.json command          29/29 passed separately
-npm ci                                      passed; 0 vulnerabilities
-npm test                                    23 Node passed; 69 Playwright passed;
-                                            1 expected project skip
-npm run build                               passed; produced dist/site
-cargo test --all-targets                    21 passed
-cargo fmt --check                           passed
-cargo clippy --all-targets -- -D warnings  passed
-cargo package --locked                      passed; package verified
-```
-
-Post-deploy checks:
-
-```text
-node scripts/verify-live.mjs <live URL>      passed; local/live byte identity
-BASE_URL=<live URL> npm run test:browser    69 passed; 1 expected project skip
-factory verify-url: /                       200; zero console errors
-factory verify-url: /?demo=1                200; zero console errors
-factory verify-url: /privacy and /terms     200; zero console errors
-designed missing route                      HTTP 404
-Lighthouse mobile                           100 performance, 100 accessibility,
-                                            100 best practices, 100 SEO
-LCP / CLS / TBT                             1.2 s / 0 / 20 ms
-```
-
-The live verifier observed zero serious or critical axe findings, zero
-unexpected console errors, zero external demo requests, zero WebUSB/Web Serial
-requests, no undersized controls, no horizontal overflow at 390 px, preserved
-real data after demo reset/exit, and a successful offline demo reload.
-
-Production budgets are 21,661 bytes JavaScript (7,384 gzip), 8,278 bytes CSS
-(2,732 gzip), and 69,354 bytes for the mobile hero image.
-
-Evidence is under `.factory/polish-evidence-2/`, including the Lighthouse JSON
-and cold desktop/mobile captures for home, demo, privacy, and terms. The full
-finding map is `.factory/polish-2.md`.
-
-## Run it
+## Reproduce
 
 ```sh
 npm ci
 npm test
 npm run build
-cargo test --all-targets
 cargo fmt --check
-cargo clippy --all-targets -- -D warnings
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all-targets
+cargo build --release
+cargo package --allow-dirty
 node scripts/verify-live.mjs https://sideload-readiness.sociobot.in
+BASE_URL=https://sideload-readiness.sociobot.in npm run test:browser
 ```
 
-The one-click browser demo is <https://sideload-readiness.sociobot.in/?demo=1>.
-The CLI demo is `sideload-readiness demo`.
+## Known limitation and operator action
 
-## Known gaps and operator action
-
-No review finding or product gap remains. The existing v0.1.4 release remains
-current because this repair changes only the site and its verification. The
-checksum-pinned winget manifest remains ready for owner submission and is not
-advertised as an available winget command.
+No physical Android handset was available; the full device matrix used the
+recording fake adb and a real AOSP-signed APK fixture. The checksum-pinned
+winget manifest remains ready for owner submission. macOS and Windows packages
+remain unsigned by their platform vendors and are accurately disclosed; their
+Sigstore bundles verify provenance.
