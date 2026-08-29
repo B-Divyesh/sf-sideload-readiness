@@ -30,7 +30,7 @@ GitHub OIDC Sigstore bundle. Verify a downloaded asset with:
 
 ```sh
 cosign verify-blob --bundle sideload-readiness-linux-x86_64.tar.gz.sigstore.json \
-  --certificate-identity-regexp '^https://github.com/B-Divyesh/sf-sideload-readiness/.github/workflows/(release|sign-release)\\.yml@' \
+  --certificate-identity-regexp '^https://github.com/B-Divyesh/sf-sideload-readiness/.github/workflows/(release|sign-release)\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   sideload-readiness-linux-x86_64.tar.gz
 ```
