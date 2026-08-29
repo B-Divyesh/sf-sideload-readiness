@@ -1,44 +1,28 @@
-# Verification handoff — work order sideload-readiness-verify-9
+# Review handoff — work order sideload-readiness-review-3
 
-## Status: PASS
+## Status: FAIL
 
-Candidate `6ce78c6b2ab5477c0e60ed81f6189ef73cacba10` is accepted at
-<https://sideload-readiness.sociobot.in>. Fresh evidence shows the deployment
-byte-matches the candidate's production site build. No release-blocking, high,
-medium, or low defect was found. Product code was not changed.
+Adversarial first-read review 3 found no blocking defect and four minor copy
+findings against commit `420ae60b8f5f22514db575064cb1cae7b6cdbe0e` and the
+byte-matching live site at <https://sideload-readiness.sociobot.in>. Product
+code was not changed.
 
-## What was verified
+## What was done
 
-- Mandatory first-read gate passes on desktop and 390 px mobile. The first
-  screen explains the job, audience, and first action, and provides the
-  one-click isolated sample demo.
-- All 29 commands in `.factory/claims.json` passed exactly as declared.
-- `npm ci`, `npm test`, `npm run build`, Rust formatting, Clippy with warnings
-  denied, all Rust tests, release build, and crate packaging passed.
-- A clean consumer install exercised CLI help/version, Markdown and JSON demo
-  output, private files, signer validation, missing adb, output failure,
-  storage boundary, signer mismatch, unauthorized devices, and multi-device
-  selection.
-- Release v0.1.4 has the required platform assets, checksums, manifests, and
-  Sigstore bundles. The independently downloaded Linux archive matched SHA-256
-  `1797f1b5a1ca905b749b495bd2fd3982c0c3b408dc3494aaeaf90507835888a0`
-  and ran successfully.
-- The live 70-case browser matrix passed 69 tests with one expected
-  project-only skip. Axe found no serious/critical issue; console/page errors
-  were zero; keyboard, focus, reduced motion, 200% text, touch size, mobile
-  overflow, history, route metadata, 404, and link checks passed.
-- Browser request logs confirmed the demo is same-origin and isolated. A stale
-  service-worker cache was replaced and `/demo` reloaded offline.
-- License verification allowed 30 requests from one client; request 31
-  returned 429 with `Retry-After: 3`.
-- Mobile Lighthouse scored 96 performance, 100 accessibility, 100 best
-  practices, and 100 SEO. LCP was 1.31 s and CLS was 0.
+- Opened production cold at 390 × 844 and 1440 × 900 and confirmed the first
+  screen states the job, audience, action, outcome, and three facts.
+- Audited every landing-page and README sentence in `.factory/review-3.md`.
+- Exercised browser demo entry, Reset, Start for real, storage isolation,
+  device-API isolation, same-origin requests, and offline reload.
+- Ran the CLI demo in a fresh temporary directory and inspected its private
+  JSON report.
+- Ran all 29 `.factory/claims.json` commands separately from a clean clone.
+- Rechecked every F-1 and F-2 finding in production and source.
+- Verified route metadata, HTTP 404, history/focus, keyboard, mobile layout,
+  reduced motion, 200% text, Axe results, security policy, and all links.
+- Confirmed the live deployment byte-matches the local production build.
 
-The full evidence and defect accounting are in
-`.factory/verification-9.md`. Captures, URL verification, and Lighthouse output
-are under `.factory/verification-evidence-9/`.
-
-## Reproduce
+## Verification
 
 ```sh
 npm ci
@@ -47,16 +31,27 @@ npm run build
 cargo fmt --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets
-cargo build --release
-cargo package --allow-dirty
 node scripts/verify-live.mjs https://sideload-readiness.sociobot.in
 BASE_URL=https://sideload-readiness.sociobot.in npm run test:browser
 ```
 
-## Known limitation and operator action
+Results: all 29 claim commands passed; 23 Node tests passed; the local and live
+browser matrices each passed 69 tests with one expected project skip; 21 Rust
+tests passed; build, formatting, and Clippy passed. No console error, dead link,
+third-party demo request, serious/critical Axe issue, or prior-finding
+regression was observed.
 
-No physical Android handset was available; the full device matrix used the
-recording fake adb and a real AOSP-signed APK fixture. The checksum-pinned
-winget manifest remains ready for owner submission. macOS and Windows packages
-remain unsigned by their platform vendors and are accurately disclosed; their
-Sigstore bundles verify provenance.
+## Known gaps and next steps
+
+Four heading rewrites remain:
+
+- `Connect` → `Connect one Android device`
+- `Check` → `Check device and app readiness`
+- `Act safely` → `Follow the report’s next step`
+- README `Use` → `Run a device readiness check`
+
+No physical Android handset was available, so live device behaviour continues
+to rely on the repository's fake-adb matrix and AOSP-signed APK fixture. That
+is an existing test-environment limitation, not a first-read or claims-contract
+defect. Preserve the current claim tests and rerun them when release artifacts
+or visitor-facing copy change.
