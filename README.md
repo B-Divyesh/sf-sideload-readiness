@@ -93,8 +93,10 @@ sideload-readiness demo
 # or: sideload-readiness --demo
 ```
 
-The sample writes its report to a new system temporary path and prints that
-path. `examples/sample-report.json` documents its stable schema and values.
+The sample creates one private, unpredictable temporary report file and prints
+its path. It never reuses an existing temporary filename. `--output PATH` is
+different: it writes the requested path and replaces that file when it already
+exists. `examples/sample-report.json` documents the stable schema and values.
 
 The report checks:
 

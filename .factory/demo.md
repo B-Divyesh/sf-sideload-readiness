@@ -8,5 +8,6 @@
 - Browser storage: only `demo:sideload-readiness`. Reset demo removes and
   recreates that key. Leaving `/demo` discards the demo key and never reads or
   removes real data.
-- CLI storage: the demo writes a Markdown report in a new system temporary
-  directory and prints the exact path. It never invokes `adb`.
+- CLI storage: the demo atomically creates one private, unpredictable Markdown
+  report file in the system temporary directory and prints its exact path. It
+  never invokes `adb` or reuses an existing temporary filename.

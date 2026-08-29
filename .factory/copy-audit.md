@@ -51,6 +51,12 @@ use of “unlock.” No other banned word appears.
 | PowerShell installer | 2 | — |
 | Checking published downloads. | 3 | — |
 | Opening the checksummed download. | 4 | — |
+| Choose your Mac type | 5 | — |
+| Apple silicon Mac (.pkg) | 4 | — |
+| Intel Mac (.pkg) | 3 | — |
+| Choose Apple silicon or Intel before downloading. | 7 | — |
+| This browser does not identify a supported desktop system. | 10 | — |
+| Open releases to choose a file. | 6 | — |
 | Downloads are being published. | 4 | — |
 | Open the release page for the current status. | 8 | — |
 | Make one cautious maintenance decision | 5 | — |

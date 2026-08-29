@@ -2,6 +2,32 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const severe = results => results.violations.filter(item => ['serious', 'critical'].includes(item.impact));
+const releaseApi = 'https://api.github.com/repos/B-Divyesh/sf-sideload-readiness/releases/latest';
+const releaseRoot = 'https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.4';
+const releaseAssets = [
+  'sideload-readiness-linux-x86_64.tar.gz',
+  'sideload-readiness-macos-aarch64.pkg',
+  'sideload-readiness-macos-x86_64.pkg',
+  'sideload-readiness-windows-x86_64.zip'
+].map(name => ({ name, browser_download_url: `${releaseRoot}/${name}` }));
+
+async function useUserAgent(page, userAgent) {
+  await page.addInitScript(value => {
+    Object.defineProperty(Navigator.prototype, 'userAgent', { configurable: true, get: () => value });
+  }, userAgent);
+}
+
+async function mockRelease(page) {
+  await page.route(releaseApi, route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ assets: releaseAssets }) }));
+  await page.route(`${releaseRoot}/**`, route => route.fulfill({ body: 'download fixture' }));
+}
+
+async function undersizedTargets(page) {
+  return page.locator('a:visible, button:visible, input:visible').evaluateAll(elements => elements
+    .map(element => ({ label: element.textContent?.trim() || element.getAttribute('aria-label') || element.id, rect: element.getBoundingClientRect() }))
+    .filter(item => item.rect.width < 44 || item.rect.height < 44)
+    .map(item => ({ label: item.label, width: item.rect.width, height: item.rect.height })));
+}
 
 test('landing page has one clear primary route and no console errors', async ({ page }) => {
   const errors = [];
@@ -50,6 +76,70 @@ test('unknown server paths return the designed 404 document with HTTP 404', asyn
   await expect(page.getByRole('link', { name: 'Return to Sideload Readiness' })).toBeVisible();
 });
 
+for (const { label, userAgent, expectedAsset } of [
+  {
+    label: 'Windows',
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36',
+    expectedAsset: 'sideload-readiness-windows-x86_64.zip'
+  },
+  {
+    label: 'Linux',
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36',
+    expectedAsset: 'sideload-readiness-linux-x86_64.tar.gz'
+  }
+]) {
+  test(`detected ${label} downloads use the exact release asset`, async ({ page }) => {
+    await useUserAgent(page, userAgent);
+    await mockRelease(page);
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Open release downloads' }).click();
+    await expect(page).toHaveURL(`${releaseRoot}/${expectedAsset}`);
+  });
+}
+
+for (const { label, userAgent, expectedChoice, expectedAsset } of [
+  {
+    label: 'Intel Mac',
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140.0 Safari/537.36',
+    expectedChoice: 'Intel Mac (.pkg)',
+    expectedAsset: 'sideload-readiness-macos-x86_64.pkg'
+  },
+  {
+    label: 'Apple silicon Mac',
+    userAgent: 'Mozilla/5.0 (Macintosh; Apple Silicon Mac OS X 14_6) AppleWebKit/605.1.15 Version/18.6 Safari/605.1.15',
+    expectedChoice: 'Apple silicon Mac (.pkg)',
+    expectedAsset: 'sideload-readiness-macos-aarch64.pkg'
+  }
+]) {
+  test(`${label} users choose a matching macOS package before download`, async ({ page }) => {
+    await useUserAgent(page, userAgent);
+    await mockRelease(page);
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Open release downloads' }).click();
+    await expect(page.locator('#download-choices-label')).toBeVisible();
+    await expect(page.getByRole('link', { name: expectedChoice })).toHaveAttribute('href', `${releaseRoot}/${expectedAsset}`);
+    await expect(page.getByRole('link', { name: 'Intel Mac (.pkg)' })).toHaveAttribute('href', `${releaseRoot}/sideload-readiness-macos-x86_64.pkg`);
+    await expect(page.getByRole('link', { name: 'Apple silicon Mac (.pkg)' })).toHaveAttribute('href', `${releaseRoot}/sideload-readiness-macos-aarch64.pkg`);
+    await expect(page.locator('#download-status')).toHaveText('Choose Apple silicon or Intel before downloading.');
+  });
+}
+
+for (const { label, userAgent } of [
+  { label: 'Android', userAgent: 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/140.0 Mobile Safari/537.36' },
+  { label: 'iPhone', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Version/18.6 Mobile/15E148 Safari/604.1' }
+]) {
+  test(`${label} does not default to a desktop installer`, async ({ page }) => {
+    await useUserAgent(page, userAgent);
+    let releaseRequests = 0;
+    await page.route(releaseApi, route => { releaseRequests += 1; return route.abort(); });
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Open release downloads' }).click();
+    await expect(page.locator('#download-status')).toHaveText('This browser does not identify a supported desktop system. Open releases to choose a file.');
+    await expect(page.locator('#download-choices')).toBeHidden();
+    expect(releaseRequests).toBe(0);
+  });
+}
+
 test('keyboard navigation reaches the demo and reset controls', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Tab');
@@ -81,15 +171,18 @@ for (const path of ['/', '/demo', '/privacy', '/terms', '/missing']) {
   });
 }
 
-test('mobile layout has no horizontal overflow and visible controls meet touch size', async ({ page }, testInfo) => {
+test('mobile layout has no horizontal overflow and every route meets touch size', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile', 'mobile project only');
-  await page.goto('/demo');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-  const undersized = await page.locator('a:visible, button:visible, input:visible').evaluateAll(elements => elements
-    .map(element => ({ label: element.textContent?.trim() || element.getAttribute('aria-label') || element.id, rect: element.getBoundingClientRect() }))
-    .filter(item => item.rect.width < 44 || item.rect.height < 44)
-    .map(item => ({ label: item.label, width: item.rect.width, height: item.rect.height })));
-  expect(undersized).toEqual([]);
+  for (const path of ['/', '/demo', '/privacy', '/terms']) {
+    await page.goto(path);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    expect(await undersizedTargets(page)).toEqual([]);
+  }
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('sb_license_verdict:sideload-readiness', JSON.stringify({ valid: true, checked_at: Date.now() })));
+  await page.reload();
+  await expect(page.locator('#fleet-files')).toBeVisible();
+  expect(await undersizedTargets(page)).toEqual([]);
 });
 
 test('reduced motion and 200% text preserve the report', async ({ page }) => {
@@ -217,37 +310,13 @@ test('service worker activates and the demo reloads offline', async ({ page, con
   await expect(page.getByText('device-6f31a0b2')).toBeVisible();
 });
 
-test('one selection opens the detected OS artifact and lookup failures stay recoverable', async ({ browser }, testInfo) => {
+test('release lookup failures stay recoverable', async ({ browser }) => {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   const page = await context.newPage();
-  const expectedAsset = testInfo.project.name === 'mobile'
-    ? 'sideload-readiness-linux-x86_64.tar.gz'
-    : 'sideload-readiness-windows-x86_64.zip';
-  await page.route('**/repos/B-Divyesh/sf-sideload-readiness/releases/latest', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: { 'access-control-allow-origin': '*' },
-    body: JSON.stringify({ assets: [
-      { name: 'sideload-readiness-linux-x86_64.tar.gz', browser_download_url: 'https://example.invalid/release.tar.gz' },
-      { name: 'sideload-readiness-windows-x86_64.zip', browser_download_url: 'https://example.invalid/release.zip' }
-    ] })
-  }));
-  await page.route('https://example.invalid/release.*', route => route.fulfill({
-    status: 200,
-    headers: { 'content-disposition': `attachment; filename="${expectedAsset}"` },
-    body: 'fixture archive'
-  }));
+  await useUserAgent(page, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36');
+  await page.route(releaseApi, route => route.abort());
   await page.goto('/');
-  const downloadStarted = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Open release downloads' }).click();
-  const download = await downloadStarted;
-  expect(download.suggestedFilename()).toBe(expectedAsset);
-
-  await page.evaluate(() => localStorage.removeItem('sideload-readiness:release'));
-  await page.reload();
-  await page.unroute('**/repos/B-Divyesh/sf-sideload-readiness/releases/latest');
-  await page.route('**/repos/B-Divyesh/sf-sideload-readiness/releases/latest', route => route.abort());
-  await page.getByRole('link', { name: /Download |Open release downloads/ }).click();
   await expect(page.locator('#download-status')).toContainText('Downloads are being published');
   await expect(page.getByRole('link', { name: 'Open release downloads' })).toHaveAttribute('href', 'https://github.com/B-Divyesh/sf-sideload-readiness/releases');
   await context.close();

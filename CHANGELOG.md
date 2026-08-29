@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4 — 2026-08-29
+
+- Create demo reports in exclusive private temporary files.
+- Ask macOS visitors to choose Intel or Apple silicon before downloading.
+- Keep unsupported mobile browsers out of desktop installer selection.
+- Make every landing and fleet control at least 44 px tall on phones.
+
 ## 0.1.3 — 2026-08-29
 
 - Read the installed APK and derive its real signing-certificate SHA-256.

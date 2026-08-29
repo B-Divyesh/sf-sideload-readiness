@@ -1,4 +1,11 @@
-use std::{fs, path::PathBuf, process::Command};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
+
+#[cfg(unix)]
+use std::os::unix::fs::{symlink, PermissionsExt};
 
 const SIGNER_SHA256: &str = "bc5e64eab1c4b5137c0fbc5ed05850b3a148d1c41775cffa4d96eea90bdd0eb8";
 
@@ -58,6 +65,26 @@ fn run_demo_json(label: &str) -> (PathBuf, serde_json::Value) {
     (output, parsed)
 }
 
+fn run_automatic_demo(temp_dir: &Path) -> PathBuf {
+    let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+        .args(["demo", "--adb", "/definitely/not/an/adb/binary"])
+        .env("TMPDIR", temp_dir)
+        .output()
+        .expect("automatic demo command starts");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    PathBuf::from(
+        String::from_utf8(result.stdout)
+            .expect("automatic demo stdout is utf-8")
+            .strip_prefix("Wrote ")
+            .expect("automatic demo prints a report path")
+            .trim(),
+    )
+}
+
 #[test]
 fn claim_demo_report_is_redacted_and_actionable() {
     let (output, parsed) = run_demo_json("claim-demo-report");
@@ -104,6 +131,79 @@ fn claim_demo_uses_no_adb_and_writes_a_temporary_report() {
     assert!(report.contains("# Sideload readiness report"));
     assert!(report.contains("Recovery checklist"));
     fs::remove_file(path).expect("temporary demo report is removable");
+}
+
+#[cfg(unix)]
+#[test]
+fn automatic_demo_uses_an_exclusive_private_file_and_rejects_temp_collisions() {
+    let directory = temporary_path("automatic-demo-private", "dir");
+    fs::create_dir(&directory).expect("isolated temp directory is created");
+    let victim = directory.join("victim.txt");
+    fs::write(&victim, "do not replace\n").expect("victim file is created");
+    let second = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("clock after epoch")
+        .as_secs();
+    let symlink_collision = directory.join(format!("sideload-readiness-demo-{second}.md"));
+    let file_collision = directory.join(format!("sideload-readiness-demo-{}.md", second + 1));
+    symlink(&victim, &symlink_collision).expect("legacy temp name can be a symlink");
+    fs::write(&file_collision, "do not replace this collision\n")
+        .expect("legacy temp name can already exist");
+
+    let first = run_automatic_demo(&directory);
+    let second = run_automatic_demo(&directory);
+
+    assert_ne!(first, second, "automatic demo paths are unique");
+    assert_eq!(first.parent(), Some(directory.as_path()));
+    assert_eq!(second.parent(), Some(directory.as_path()));
+    assert_eq!(
+        fs::read_to_string(&victim).expect("victim remains readable"),
+        "do not replace\n",
+        "an automatic demo never follows a pre-existing symlink"
+    );
+    assert_eq!(
+        fs::read_to_string(&file_collision).expect("collision remains readable"),
+        "do not replace this collision\n",
+        "an automatic demo never reuses a pre-existing filename"
+    );
+    for report in [&first, &second] {
+        let metadata = fs::symlink_metadata(report).expect("automatic report exists");
+        assert!(metadata.file_type().is_file());
+        assert!(!metadata.file_type().is_symlink());
+        assert_eq!(
+            metadata.permissions().mode() & 0o077,
+            0,
+            "report is private"
+        );
+        assert!(fs::read_to_string(report)
+            .expect("automatic report is readable")
+            .contains("# Sideload readiness report"));
+    }
+
+    for file in [first, second, symlink_collision, file_collision, victim] {
+        fs::remove_file(file).expect("isolated test file is removed");
+    }
+    fs::remove_dir(directory).expect("isolated temp directory is removed");
+}
+
+#[test]
+fn explicit_demo_output_replaces_the_requested_file_as_documented() {
+    let output = temporary_path("explicit-demo-overwrite", "md");
+    fs::write(&output, "replace me\n").expect("existing explicit output is created");
+    let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+        .args(["demo", "--output"])
+        .arg(&output)
+        .output()
+        .expect("explicit demo command starts");
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let report = fs::read_to_string(&output).expect("explicit report exists");
+    assert_ne!(report, "replace me\n");
+    assert!(report.contains("# Sideload readiness report"));
+    fs::remove_file(output).expect("explicit report is removable");
 }
 
 #[cfg(unix)]

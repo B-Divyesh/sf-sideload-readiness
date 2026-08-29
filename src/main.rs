@@ -4,10 +4,12 @@ use serde::Serialize;
 use std::{
     collections::HashSet,
     fs,
+    io::Write,
     path::PathBuf,
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
+use tempfile::NamedTempFile;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -84,6 +86,11 @@ struct UserError {
     next_step: String,
 }
 
+enum OutputDestination {
+    Explicit(PathBuf),
+    AutomaticDemo(NamedTempFile),
+}
+
 impl UserError {
     fn new(problem: impl Into<String>, next_step: impl Into<String>) -> Self {
         Self {
@@ -106,19 +113,37 @@ fn main() {
             cli.device.as_deref(),
         )
     };
-    let output = if run_demo && cli.output.is_none() {
-        let extension = if cli.json { "json" } else { "md" };
-        Some(std::env::temp_dir().join(format!("sideload-readiness-demo-{}.{}", now(), extension)))
-    } else {
-        cli.output
-    };
-    if let Err(error) = result.and_then(|report| emit(report, cli.json, output)) {
+    let requested_output = cli.output;
+    let emitted = result.and_then(|report| {
+        let output = if run_demo && requested_output.is_none() {
+            automatic_demo_output(if cli.json { "json" } else { "md" })
+                .map(|file| Some(OutputDestination::AutomaticDemo(file)))
+        } else {
+            Ok(requested_output.map(OutputDestination::Explicit))
+        };
+        output.and_then(|output| emit(report, cli.json, output))
+    });
+    if let Err(error) = emitted {
         eprintln!(
             "Could not make a readiness report: {}\nNext step: {}",
             error.problem, error.next_step
         );
         std::process::exit(2);
     }
+}
+
+fn automatic_demo_output(extension: &str) -> Result<NamedTempFile, UserError> {
+    let suffix = format!(".{extension}");
+    tempfile::Builder::new()
+        .prefix("sideload-readiness-demo-")
+        .suffix(&suffix)
+        .tempfile()
+        .map_err(|error| {
+            UserError::new(
+                format!("could not create a private temporary demo report ({error})"),
+                "try the demo again or choose an existing writable folder with `--output`.",
+            )
+        })
 }
 
 fn now() -> u64 {
@@ -514,19 +539,46 @@ fn markdown(r: &Report) -> String {
     out
 }
 
-fn emit(report: Report, json: bool, output: Option<PathBuf>) -> Result<(), UserError> {
+fn emit(report: Report, json: bool, output: Option<OutputDestination>) -> Result<(), UserError> {
     let rendered = if json {
         serde_json::to_string_pretty(&report).expect("report serializes")
     } else {
         markdown(&report)
     };
-    if let Some(path) = output {
-        fs::write(&path, &rendered).map_err(|error| {
-            UserError::new(
-                format!("could not write {} ({error})", path.display()),
-                "choose an existing writable folder with `--output`, then run the command again.",
-            )
-        })?;
+    if let Some(output) = output {
+        let path = match output {
+            OutputDestination::Explicit(path) => {
+                fs::write(&path, &rendered).map_err(|error| {
+                    UserError::new(
+                        format!("could not write {} ({error})", path.display()),
+                        "choose an existing writable folder with `--output`, then run the command again.",
+                    )
+                })?;
+                path
+            }
+            OutputDestination::AutomaticDemo(mut file) => {
+                let path = file.path().to_path_buf();
+                file.write_all(rendered.as_bytes())
+                    .and_then(|()| file.flush())
+                    .map_err(|error| {
+                        UserError::new(
+                            format!("could not write private temporary report {} ({error})", path.display()),
+                            "try the demo again or choose an existing writable folder with `--output`.",
+                        )
+                    })?;
+                file.keep().map_err(|error| {
+                    UserError::new(
+                        format!(
+                            "could not keep private temporary report {} ({})",
+                            path.display(),
+                            error.error
+                        ),
+                        "try the demo again or choose an existing writable folder with `--output`.",
+                    )
+                })?;
+                path
+            }
+        };
         println!("Wrote {}", path.display());
     } else {
         println!("{rendered}");
