@@ -5,6 +5,7 @@ edition = "2021"
 description = "Read-only Android sideload readiness checks"
 license = "MIT"
 repository = "https://github.com/B-Divyesh/sf-sideload-readiness"
+include = ["src/**", "tests/**", "examples/**", "Cargo.toml", "Cargo.lock", "README.md", "CHANGELOG.md", "LICENSE"]
 
 [[bin]]
 name = "sideload-readiness"
