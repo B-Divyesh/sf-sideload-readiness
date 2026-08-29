@@ -1,0 +1,43 @@
+name: Sign existing release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to sign, for example v0.1.1
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: sigstore/cosign-installer@v3
+      - name: Download and sign every release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir assets
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPOSITORY/releases/tags/$TAG" \
+            > release.json
+          jq -r '.assets[] | select(.name | endswith(".sigstore.json") | not) | [.name, .browser_download_url] | @tsv' release.json \
+            | while IFS=$'\t' read -r name url; do
+                curl --fail --location --silent --show-error "$url" -o "assets/$name"
+                cosign sign-blob --yes --bundle "assets/$name.sigstore.json" "assets/$name"
+              done
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: assets/*.sigstore.json

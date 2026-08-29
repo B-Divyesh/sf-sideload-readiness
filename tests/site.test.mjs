@@ -33,10 +33,16 @@ test('site source declares no third-party runtime code', async () => {
 
 test('site has required routes and metadata', async () => {
   const html = await get('index.html');
-  const config = await get('staticwebapp.config.json');
+  const config = JSON.parse(await get('staticwebapp.config.json'));
   assert.match(html, /Sideload Readiness — Check Android update safety/);
   assert.match(html, /og-concrete-moss/);
-  assert.match(config, /Content-Security-Policy/);
+  assert.match(config.globalHeaders['Content-Security-Policy'], /default-src 'self'/);
+  assert.equal(config.navigationFallback, undefined);
+  assert.deepEqual(
+    config.routes.filter(route => route.rewrite === '/index.html').map(route => route.route),
+    ['/demo', '/privacy', '/terms']
+  );
+  assert.deepEqual(config.responseOverrides['404'], { rewrite: '/404.html' });
 });
 
 test('service worker replaces older offline shells during updates', async () => {

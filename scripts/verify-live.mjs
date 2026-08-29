@@ -13,7 +13,7 @@ try {
   page.on('console', message => {
     if (message.type() === 'error') evidence.consoleErrors.push(message.text());
   });
-  for (const route of ['/', '/demo', '/privacy', '/terms', '/missing']) {
+  for (const route of ['/', '/demo', '/privacy', '/terms', '/unambiguously-missing-qa-route']) {
     const response = await page.goto(`${baseURL}${route}`, { waitUntil: 'networkidle' });
     const violations = (await new AxeBuilder({ page }).analyze()).violations
       .filter(item => ['serious', 'critical'].includes(item.impact));
@@ -23,7 +23,7 @@ try {
       h1: await page.locator('h1').count(),
       seriousOrCriticalAxe: violations.length
     };
-    assert.equal(response.status(), 200);
+    assert.equal(response.status(), route === '/unambiguously-missing-qa-route' ? 404 : 200);
     assert.equal(evidence.routes[route].h1, 1);
     assert.equal(violations.length, 0);
   }

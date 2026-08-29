@@ -28,6 +28,14 @@ test('production responses enforce policy and cache fingerprinted assets immutab
   expect(workerResponse.headers()['cache-control']).toBe('no-cache');
 });
 
+test('unknown server paths return the designed 404 document with HTTP 404', async ({ page }) => {
+  const response = await page.goto('/unambiguously-missing-qa-route');
+  expect(response.status()).toBe(404);
+  await expect(page).toHaveTitle('Not found — Sideload Readiness');
+  await expect(page.getByRole('heading', { level: 1, name: 'That page is not here' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Return to Sideload Readiness' })).toBeVisible();
+});
+
 test('keyboard navigation reaches the demo and reset controls', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Tab');

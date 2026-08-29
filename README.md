@@ -25,9 +25,19 @@ irm https://sideload-readiness.sociobot.in/install.ps1 | iex
 ```
 
 The installers download the matching release, verify its SHA-256 checksum,
-then place the binary on your PATH. Windows and macOS packages are unsigned
-until the operator supplies signing certificates. On macOS, use right-click
-then Open if Gatekeeper asks.
+then place the binary on your PATH. Every release asset also has a matching
+GitHub OIDC Sigstore bundle. Verify a downloaded asset with:
+
+```sh
+cosign verify-blob --bundle sideload-readiness-linux-x86_64.tar.gz.sigstore.json \
+  --certificate-identity-regexp '^https://github.com/B-Divyesh/sf-sideload-readiness/.github/workflows/(release|sign-release)\\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  sideload-readiness-linux-x86_64.tar.gz
+```
+
+The macOS package is not Apple-notarized and the Windows zip is not signed
+with an organization Authenticode certificate. Their Sigstore bundles prove
+the GitHub Actions release provenance before installation.
 
 The repository includes a Homebrew formula for the operator-managed tap:
 

@@ -23,8 +23,22 @@ test('@claim:platform-packaging release workflow retains the installer artifact 
     'sideload-readiness-linux-x86_64.rpm',
     'SHA256SUMS',
     'latest.json',
+    'id-token: write',
+    'sigstore/cosign-installer@v3',
+    'cosign sign-blob --yes --bundle',
     'softprops/action-gh-release@v2'
   ]) assert.match(workflow, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+});
+
+test('@claim:release-signatures release workflows use GitHub OIDC to sign every published asset', async () => {
+  const release = await read('.github/workflows/release.yml');
+  const repair = await read('.github/workflows/sign-release.yml');
+  for (const workflow of [release, repair]) {
+    assert.match(workflow, /id-token: write/);
+    assert.match(workflow, /sigstore\/cosign-installer@v3/);
+    assert.match(workflow, /cosign sign-blob --yes --bundle/);
+  }
+  assert.match(repair, /endswith\("\.sigstore\.json"\) \| not/);
 });
 
 test('one-line installers require a matching published checksum', async () => {
