@@ -91,6 +91,9 @@ try {
   await page.getByRole('heading', { level: 2, name: 'Sample readiness report' }).waitFor();
   await page.getByRole('heading', { level: 2, name: 'Fleet report review' }).waitFor();
   await page.getByRole('heading', { level: 2, name: 'How the readiness check works' }).waitFor();
+  await page.getByRole('heading', { level: 3, name: 'Connect one Android device' }).waitFor();
+  await page.getByRole('heading', { level: 3, name: 'Check device and app readiness' }).waitFor();
+  await page.getByRole('heading', { level: 3, name: 'Follow the report’s next step' }).waitFor();
   await page.getByRole('heading', { level: 3, name: 'What the CLI checks' }).waitFor();
   await page.getByRole('heading', { level: 3, name: 'What the CLI never does' }).waitFor();
   await page.evaluate(() => localStorage.setItem('real:sentinel', 'must-survive'));

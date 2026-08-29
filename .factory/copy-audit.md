@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Captured from the rendered `/` route for perfection-loop round 2. Headings, actions, status
+Captured from the rendered `/` route for perfection-loop round 3. Headings, actions, status
 labels, report text, and prose are included. No line exceeds 22 words. The
 literal safety statements about not unlocking devices are the allowed literal
 use of “unlock.” No other banned word appears.
@@ -62,13 +62,13 @@ use of “unlock.” No other banned word appears.
 | Downloads are being published. | 4 | — |
 | Open the release page for the current status. | 8 | — |
 | How the readiness check works | 5 | — |
-| Connect | 1 | — |
+| Connect one Android device | 4 | — |
 | Accept Android’s USB debugging prompt. | 5 | — |
 | Choose a device when adb lists more than one. | 9 | — |
-| Check | 1 | — |
+| Check device and app readiness | 5 | — |
 | Compare the installed signer SHA-256 with the approved APK. | 9 | — |
 | Read storage, USB state, and recovery clues. | 7 | — |
-| Act safely | 2 | — |
+| Follow the report’s next step | 5 | — |
 | Save a redacted report. | 4 | — |
 | Follow its next step or stop before an update. | 9 | — |
 | What this tool does and does not do | 8 | — |
@@ -91,7 +91,8 @@ use of “unlock.” No other banned word appears.
 
 ## README audit
 
-The README was checked sentence by sentence after the repair. No sentence exceeds
+The README was checked sentence by sentence after the repair. Its task heading is
+`Run a device readiness check`; no sentence exceeds
 22 words and no banned marketing word appears. Every behavior or trust statement
 maps to one entry in `.factory/claims.json`. In particular, signer read failures,
 all six diagnostics, example parity, platform signing status, Sigstore provenance,

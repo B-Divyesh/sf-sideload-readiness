@@ -64,6 +64,16 @@ test('the sample report source uses the isolated demo namespace', async () => {
   assert.match(app, /demo:/);
 });
 
+test('first-read operating headings name their Android readiness tasks', async () => {
+  const [app, readme] = await Promise.all([get('app.js'), getRoot('README.md')]);
+  for (const heading of [
+    'Connect one Android device',
+    'Check device and app readiness',
+    'Follow the report’s next step'
+  ]) assert.match(app, new RegExp(`<h3>${heading}</h3>`));
+  assert.match(readme, /^## Run a device readiness check$/m);
+});
+
 test('site source declares no third-party runtime code', async () => {
   const html = await get('index.html');
   assert.doesNotMatch(html, /<script[^>]+src=["']https?:\/\//);

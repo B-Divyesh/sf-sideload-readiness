@@ -39,6 +39,9 @@ test('landing page has one clear primary route and no console errors', async ({ 
   await expect(page.getByRole('link', { name: 'Try it with sample data' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Sample readiness report' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Fleet report review' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 3, name: 'Connect one Android device' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 3, name: 'Check device and app readiness' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 3, name: 'Follow the report’s next step' })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
