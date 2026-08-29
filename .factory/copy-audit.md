@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Captured from the rendered `/` route for perfection-loop round 1. Headings, actions, status
+Captured from the rendered `/` route for perfection-loop round 2. Headings, actions, status
 labels, report text, and prose are included. No line exceeds 22 words. The
 literal safety statements about not unlocking devices are the allowed literal
 use of “unlock.” No other banned word appears.
@@ -15,7 +15,7 @@ use of “unlock.” No other banned word appears.
 | Read-only adb checks | 3 | — |
 | Device IDs are redacted | 4 | — |
 | Free for one device | 4 | — |
-| See the report before you touch a device | 8 | — |
+| Sample readiness report | 3 | — |
 | Readiness report / sample | 3 | — |
 | 83% · Fix one item before recovery | 6 | — |
 | Authorized USB debugging | 3 | — |
@@ -78,7 +78,7 @@ use of “unlock.” No other banned word appears.
 | What the CLI never does | 5 | — |
 | It never bypasses Android controls, unlocks bootloaders, or distributes APKs. | 10 | literal “unlock” |
 | Small IT teams | 3 | — |
-| Review several reports together | 4 | — |
+| Fleet report review | 3 | — |
 | Fleet review is a $39 one-time license. | 8 | — |
 | It adds a local report queue and package-status table. | 9 | — |
 | Single-device checks stay free. | 4 | — |
@@ -95,7 +95,8 @@ The README was checked sentence by sentence after the repair. No sentence exceed
 22 words and no banned marketing word appears. Every behavior or trust statement
 maps to one entry in `.factory/claims.json`. In particular, signer read failures,
 all six diagnostics, example parity, platform signing status, Sigstore provenance,
-and the Sociobot-only billing boundary now have dedicated tagged tests.
+browser-demo device isolation, release archive checksums, and the Sociobot-only
+billing boundary now have dedicated tagged tests.
 
 ## Terminology
 

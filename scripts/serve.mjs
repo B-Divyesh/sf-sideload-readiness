@@ -12,7 +12,8 @@ createServer(async (req, res) => {
     'content-type': types[extname(file)] || 'application/octet-stream',
     'content-security-policy': policy,
     'x-content-type-options': 'nosniff',
-    'referrer-policy': 'strict-origin-when-cross-origin'
+    'referrer-policy': 'strict-origin-when-cross-origin',
+    'permissions-policy': 'camera=(), microphone=(), geolocation=(), usb=(), serial=()'
   };
   if (clean.startsWith('/assets/')) headers['cache-control'] = 'public, max-age=31536000, immutable';
   if (clean === '/service-worker.js') headers['cache-control'] = 'no-cache';

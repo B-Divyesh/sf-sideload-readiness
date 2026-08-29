@@ -30,6 +30,16 @@ for (const [route, localPath] of [
 
 try {
   const desktop = await browser.newContext({ ...devices['Desktop Chrome'] });
+  await desktop.addInitScript(() => {
+    sessionStorage.setItem('device-api-requests', sessionStorage.getItem('device-api-requests') || '0');
+    const recordRequest = () => {
+      const count = Number(sessionStorage.getItem('device-api-requests') || '0');
+      sessionStorage.setItem('device-api-requests', String(count + 1));
+      return Promise.reject(new DOMException('Blocked by the verification sandbox', 'NotAllowedError'));
+    };
+    Object.defineProperty(Navigator.prototype, 'usb', { configurable: true, get: () => ({ requestDevice: recordRequest, getDevices: recordRequest }) });
+    Object.defineProperty(Navigator.prototype, 'serial', { configurable: true, get: () => ({ requestPort: recordRequest, getPorts: recordRequest }) });
+  });
   const page = await desktop.newPage();
   let checkingIntentionalNotFound = false;
   page.on('pageerror', error => evidence.consoleErrors.push(String(error)));
@@ -78,6 +88,8 @@ try {
   await page.keyboard.press('Tab');
   assert.equal(await page.getByRole('link', { name: 'Skip to report' }).evaluate(element => element === document.activeElement), true);
   await page.getByRole('heading', { level: 2, name: 'Install the command-line tool' }).waitFor();
+  await page.getByRole('heading', { level: 2, name: 'Sample readiness report' }).waitFor();
+  await page.getByRole('heading', { level: 2, name: 'Fleet report review' }).waitFor();
   await page.getByRole('heading', { level: 2, name: 'How the readiness check works' }).waitFor();
   await page.getByRole('heading', { level: 3, name: 'What the CLI checks' }).waitFor();
   await page.getByRole('heading', { level: 3, name: 'What the CLI never does' }).waitFor();
@@ -92,10 +104,12 @@ try {
     enteredAt: `${baseURL}/?demo=1`,
     resetKeys: demoKeys,
     demoKeyAfterExit: await page.evaluate(() => localStorage.getItem('demo:sideload-readiness')),
-    realSentinelAfterExit: await page.evaluate(() => localStorage.getItem('real:sentinel'))
+    realSentinelAfterExit: await page.evaluate(() => localStorage.getItem('real:sentinel')),
+    deviceApiRequests: await page.evaluate(() => Number(sessionStorage.getItem('device-api-requests')))
   };
   assert.equal(evidence.demoIsolation.demoKeyAfterExit, null);
   assert.equal(evidence.demoIsolation.realSentinelAfterExit, 'must-survive');
+  assert.equal(evidence.demoIsolation.deviceApiRequests, 0);
   await desktop.close();
 
   const mobile = await browser.newContext({ ...devices['Pixel 5'], viewport: { width: 390, height: 844 } });

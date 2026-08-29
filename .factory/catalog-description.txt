@@ -1,1 +1,1 @@
-Check Android update safety before maintaining an approved sideloaded app.
+Check an Android device before updating an approved sideloaded app.

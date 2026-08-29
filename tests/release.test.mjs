@@ -39,6 +39,32 @@ test('@claim:release-signatures every current release asset passes pinned Cosign
   assert.ok(result.verifiedAssets.length >= 8);
 });
 
+test('@claim:release-checksums every current release archive has a matching published SHA-256', async () => {
+  const response = await fetch('https://api.github.com/repos/B-Divyesh/sf-sideload-readiness/releases/latest');
+  assert.equal(response.status, 200);
+  const release = await response.json();
+  assert.match(release.tag_name, /^v\d+\.\d+\.\d+$/);
+  const archives = release.assets.filter(asset => /\.(?:tar\.gz|zip|pkg|deb|rpm)$/.test(asset.name));
+  assert.ok(archives.length >= 8, 'the current cross-platform release must advertise every archive');
+  const sumsAsset = release.assets.find(asset => asset.name === 'SHA256SUMS');
+  assert.ok(sumsAsset, 'the current release must publish SHA256SUMS');
+  const sumsResponse = await fetch(sumsAsset.browser_download_url);
+  assert.equal(sumsResponse.status, 200);
+  const sums = new Map((await sumsResponse.text()).trim().split('\n').map(line => {
+    const match = line.match(/^([a-f0-9]{64})\s+([^\s]+)$/);
+    assert.ok(match, `valid SHA-256 line: ${line}`);
+    return [match[2], match[1]];
+  }));
+  for (const asset of archives) {
+    const expected = sums.get(asset.name);
+    assert.ok(expected, `${asset.name} has a SHA256SUMS entry`);
+    const assetResponse = await fetch(asset.browser_download_url);
+    assert.equal(assetResponse.status, 200, `${asset.name} downloads`);
+    const actual = createHash('sha256').update(Buffer.from(await assetResponse.arrayBuffer())).digest('hex');
+    assert.equal(actual, expected, `${asset.name} matches its published SHA-256`);
+  }
+});
+
 function zipEntry(archive, wanted) {
   const eocd = archive.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
   assert.ok(eocd >= 0, 'zip end record exists');

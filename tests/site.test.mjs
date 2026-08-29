@@ -20,7 +20,7 @@ test('npm clean installs are locked to the declared package', async () => {
 test('browser claim commands install their declared clean-clone prerequisites', async () => {
   const claims = JSON.parse(await getRoot('.factory/claims.json'));
   const browserClaims = claims.filter(({ test: command }) => command.includes('test:browser'));
-  assert.equal(browserClaims.length, 5);
+  assert.equal(browserClaims.length, 6);
   for (const claim of browserClaims) assert.match(claim.test, /^npm ci && npm run test:browser/);
 });
 
@@ -77,12 +77,20 @@ test('site has required routes and metadata', async () => {
   assert.match(html, /Sideload Readiness — Check Android update safety/);
   assert.match(html, /og-concrete-moss/);
   assert.match(config.globalHeaders['Content-Security-Policy'], /default-src 'self'/);
+  assert.match(config.globalHeaders['Permissions-Policy'], /usb=\(\)/);
+  assert.match(config.globalHeaders['Permissions-Policy'], /serial=\(\)/);
   assert.equal(config.navigationFallback, undefined);
   assert.deepEqual(
     config.routes.filter(route => route.rewrite === '/index.html').map(route => route.route),
     ['/demo', '/privacy', '/terms']
   );
   assert.deepEqual(config.responseOverrides['404'], { rewrite: '/404.html' });
+});
+
+test('catalog description is verb-first and at most 120 characters', async () => {
+  const description = (await getRoot('.factory/catalog-description.txt')).trim();
+  assert.ok(description.length <= 120);
+  assert.match(description, /^(?:Check|Create|Find|Review|Test|Verify)\b/);
 });
 
 test('server 404 uses direct recovery copy', async () => {

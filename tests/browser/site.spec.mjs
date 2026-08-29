@@ -37,6 +37,8 @@ test('landing page has one clear primary route and no console errors', async ({ 
   await expect(page.locator('main h1')).toHaveCount(1);
   await expect(page.locator('main')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Try it with sample data' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Sample readiness report' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Fleet report review' })).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -57,6 +59,8 @@ test('390px first viewport contains the complete sample action and outcome', asy
 test('production responses enforce policy and cache fingerprinted assets immutably', async ({ page }) => {
   const response = await page.goto('/');
   expect(response.headers()['content-security-policy']).toContain("default-src 'self'");
+  expect(response.headers()['permissions-policy']).toContain('usb=()');
+  expect(response.headers()['permissions-policy']).toContain('serial=()');
   const assetUrls = await page.locator('link[rel="stylesheet"], script[src]').evaluateAll(elements => elements.map(element => element.href || element.src));
   expect(assetUrls).toHaveLength(2);
   for (const url of assetUrls) {
@@ -242,6 +246,33 @@ test('@claim:local-demo the sample uses only its demo storage namespace', async 
   await page.getByRole('link', { name: 'Start for real' }).click();
   expect(await page.evaluate(() => localStorage.getItem('demo:sideload-readiness'))).toBeNull();
   expect(await page.evaluate(() => localStorage.getItem('real:sentinel'))).toBe('must-survive');
+});
+
+test('@claim:browser-demo-no-device the browser sample never requests WebUSB or Web Serial access', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('device-api-requests', sessionStorage.getItem('device-api-requests') || '0');
+    const recordRequest = () => {
+      const count = Number(sessionStorage.getItem('device-api-requests') || '0');
+      sessionStorage.setItem('device-api-requests', String(count + 1));
+      return Promise.reject(new DOMException('Blocked by the test sandbox', 'NotAllowedError'));
+    };
+    Object.defineProperty(Navigator.prototype, 'usb', {
+      configurable: true,
+      get: () => ({ requestDevice: recordRequest, getDevices: recordRequest })
+    });
+    Object.defineProperty(Navigator.prototype, 'serial', {
+      configurable: true,
+      get: () => ({ requestPort: recordRequest, getPorts: recordRequest })
+    });
+  });
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Try it with sample data' }).click();
+  await expect(page).toHaveURL(/\?demo=1$/);
+  await page.getByRole('button', { name: 'Reset demo' }).click();
+  await page.reload();
+  await expect(page.getByText('Demo — sample data, nothing is saved.')).toBeVisible();
+  await page.getByRole('link', { name: 'Start for real' }).click();
+  expect(await page.evaluate(() => Number(sessionStorage.getItem('device-api-requests')))).toBe(0);
 });
 
 test('starting for real discards the demo storage namespace', async ({ page }) => {
