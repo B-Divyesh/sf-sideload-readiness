@@ -1,7 +1,9 @@
 # Independent verification 3 — FAIL
 
-**Candidate:** `1cbc9e0d7c4573ef91192088f9b8b2973fdfa78b` (`main`)  
-**Production URL:** <https://sideload-readiness.sociobot.in>  
+**Candidate:** `1cbc9e0d7c4573ef91192088f9b8b2973fdfa78b` (`main`)
+
+**Production URL:** <https://sideload-readiness.sociobot.in>
+
 **Verified:** 2026-08-29 from the supplied clean checkout
 
 ## Release decision
