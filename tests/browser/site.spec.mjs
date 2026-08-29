@@ -14,6 +14,20 @@ test('landing page has one clear primary route and no console errors', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('390px first viewport contains the complete sample action and outcome', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  for (const locator of [
+    page.getByRole('link', { name: 'Try it with sample data' }),
+    page.getByText('See a redacted report and the next safe step.')
+  ]) {
+    const box = await locator.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(844);
+  }
+});
+
 test('production responses enforce policy and cache fingerprinted assets immutably', async ({ page }) => {
   const response = await page.goto('/');
   expect(response.headers()['content-security-policy']).toContain("default-src 'self'");

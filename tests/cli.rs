@@ -1,5 +1,7 @@
 use std::{fs, path::PathBuf, process::Command};
 
+const SIGNER_SHA256: &str = "9a25705e391fb9276555caad4f45428ef1bc8ac4ac65aa367a76fc64bb43cc4d";
+
 fn temporary_path(label: &str, extension: &str) -> PathBuf {
     std::env::temp_dir().join(format!(
         "sideload-readiness-{label}-{}-{}.{}",
@@ -79,6 +81,23 @@ fn claim_demo_uses_no_adb_and_writes_a_temporary_report() {
 
 #[cfg(unix)]
 fn run_mock_device(label: &str) -> (PathBuf, PathBuf, serde_json::Value) {
+    run_mock_device_with_args(label, &[])
+}
+
+#[cfg(unix)]
+fn run_mock_device_with_args(
+    label: &str,
+    extra_args: &[&str],
+) -> (PathBuf, PathBuf, serde_json::Value) {
+    run_mock_device_case(label, extra_args, false)
+}
+
+#[cfg(unix)]
+fn run_mock_device_case(
+    label: &str,
+    extra_args: &[&str],
+    signing_info_only: bool,
+) -> (PathBuf, PathBuf, serde_json::Value) {
     use std::os::unix::fs::PermissionsExt;
 
     let adb_path = temporary_path(label, "sh");
@@ -94,7 +113,13 @@ case "$*" in
   *sys.usb.config) printf 'mtp,adb\n' ;;
   *development_settings_enabled) printf '1\n' ;;
   *'df -k /data') printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n/data 8000000 4000000 4000000 50%% /data\n' ;;
-  *'dumpsys package com.example.approved') printf 'SigningInfo\n' ;;
+  *'dumpsys package com.example.approved')
+    if [ "$SIDELOAD_TEST_SIGNING_INFO_ONLY" = "1" ]; then
+      printf 'SigningInfo\n'
+    else
+      printf 'SigningInfo:\n  APK contents signer SHA-256 digest: 9A:25:70:5E:39:1F:B9:27:65:55:CA:AD:4F:45:42:8E:F1:BC:8A:C4:AC:65:AA:36:7A:76:FC:64:BB:43:CC:4D\n'
+    fi
+    ;;
   *ro.build.ab_update) printf 'true\n' ;;
   *) printf '\n' ;;
 esac
@@ -106,14 +131,20 @@ esac
         .permissions();
     permissions.set_mode(0o755);
     fs::set_permissions(&adb_path, permissions).expect("mock adb is executable");
-    let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+    let mut command = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"));
+    command
         .args(["check", "--adb"])
         .arg(&adb_path)
-        .args(["--package", "com.example.approved", "--json", "--output"])
+        .args(["--package", "com.example.approved"])
+        .args(extra_args)
+        .args(["--json", "--output"])
         .arg(&output_path)
         .env("SIDELOAD_TEST_ADB_LOG", &log_path)
-        .output()
-        .expect("check command starts");
+        .env(
+            "SIDELOAD_TEST_SIGNING_INFO_ONLY",
+            if signing_info_only { "1" } else { "0" },
+        );
+    let result = command.output().expect("check command starts");
     assert!(
         result.status.success(),
         "{}",
@@ -123,6 +154,66 @@ esac
     let parsed = serde_json::from_str(&report).expect("live report is JSON");
     fs::remove_file(&output_path).expect("output can be removed");
     (adb_path, log_path, parsed)
+}
+
+#[cfg(unix)]
+#[test]
+fn signing_info_without_a_digest_is_never_reported_ready() {
+    let (adb_path, log_path, report) = run_mock_device_case("signing-info-only", &[], true);
+    let signer = report["findings"]
+        .as_array()
+        .expect("findings")
+        .iter()
+        .find(|finding| finding["id"] == "signer")
+        .expect("signer finding");
+    assert_eq!(signer["status"], "needs-review");
+    assert!(signer["detail"]
+        .as_str()
+        .expect("signer detail")
+        .contains("No stable SHA-256 signer certificate digest"));
+    fs::remove_file(adb_path).expect("mock adb can be removed");
+    fs::remove_file(log_path).expect("mock log can be removed");
+}
+
+#[cfg(unix)]
+#[test]
+fn claim_signer_identity_is_extracted_and_compared() {
+    let (adb_path, log_path, matched) =
+        run_mock_device_with_args("claim-signer-match", &["--expected-signer", SIGNER_SHA256]);
+    let signer = matched["findings"]
+        .as_array()
+        .expect("findings")
+        .iter()
+        .find(|finding| finding["id"] == "signer")
+        .expect("signer finding");
+    assert_eq!(signer["status"], "ready");
+    assert!(signer["detail"]
+        .as_str()
+        .expect("signer detail")
+        .contains("matches the expected approved signer"));
+    assert!(signer["detail"]
+        .as_str()
+        .expect("signer detail")
+        .contains("9A:25:70:5E"));
+    fs::remove_file(adb_path).expect("mock adb can be removed");
+    fs::remove_file(log_path).expect("mock log can be removed");
+
+    let wrong = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    let (adb_path, log_path, mismatched) =
+        run_mock_device_with_args("claim-signer-mismatch", &["--expected-signer", wrong]);
+    let signer = mismatched["findings"]
+        .as_array()
+        .expect("findings")
+        .iter()
+        .find(|finding| finding["id"] == "signer")
+        .expect("signer finding");
+    assert_eq!(signer["status"], "blocked");
+    assert!(signer["detail"]
+        .as_str()
+        .expect("signer detail")
+        .contains("does not match expected"));
+    fs::remove_file(adb_path).expect("mock adb can be removed");
+    fs::remove_file(log_path).expect("mock log can be removed");
 }
 
 #[cfg(unix)]
@@ -203,6 +294,83 @@ fn claim_unauthorized_devices_are_refused_with_a_next_step() {
     assert!(stderr.contains("no authorized device was found"));
     assert!(stderr.contains("Next step:"));
     fs::remove_file(adb_path).expect("mock adb can be removed");
+}
+
+#[cfg(unix)]
+#[test]
+fn multiple_devices_require_an_explicit_redacted_selection() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let adb_path = temporary_path("multiple-devices", "sh");
+    let output_path = temporary_path("selected-device", "json");
+    fs::write(
+        &adb_path,
+        r#"#!/bin/sh
+case "$*" in
+  devices) printf 'List of devices attached\nSERIAL-ONE\tdevice\nSERIAL-TWO\tdevice\n' ;;
+  *ro.build.version.release) case "$*" in *SERIAL-TWO*) printf '14\n' ;; *) printf '15\n' ;; esac ;;
+  *sys.usb.config) printf 'mtp,adb\n' ;;
+  *development_settings_enabled) printf '1\n' ;;
+  *'df -k /data') printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n/data 8000000 4000000 4000000 50%% /data\n' ;;
+  *ro.build.ab_update) printf 'true\n' ;;
+  *) printf '\n' ;;
+esac
+"#,
+    )
+    .expect("mock adb is written");
+    let mut permissions = fs::metadata(&adb_path)
+        .expect("mock adb metadata")
+        .permissions();
+    permissions.set_mode(0o755);
+    fs::set_permissions(&adb_path, permissions).expect("mock adb is executable");
+
+    let ambiguous = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+        .args(["check", "--adb"])
+        .arg(&adb_path)
+        .output()
+        .expect("ambiguous check starts");
+    assert_eq!(ambiguous.status.code(), Some(2));
+    let error = String::from_utf8(ambiguous.stderr).expect("error is utf-8");
+    assert!(error.contains("2 authorized devices were found"));
+    assert!(error.contains("--device SERIAL"));
+    assert!(!error.contains("SERIAL-ONE"));
+    assert!(!error.contains("SERIAL-TWO"));
+
+    let selected = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+        .args(["check", "--adb"])
+        .arg(&adb_path)
+        .args(["--device", "SERIAL-TWO", "--json", "--output"])
+        .arg(&output_path)
+        .output()
+        .expect("selected check starts");
+    assert!(selected.status.success());
+    let report: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&output_path).expect("selected report exists"))
+            .expect("selected report is JSON");
+    assert_eq!(report["device"]["android"], "14");
+    assert!(report["device"]["id"]
+        .as_str()
+        .expect("redacted id")
+        .starts_with("device-"));
+    assert!(!serde_json::to_string(&report)
+        .expect("report serializes")
+        .contains("SERIAL-TWO"));
+    fs::remove_file(adb_path).expect("mock adb can be removed");
+    fs::remove_file(output_path).expect("selected report can be removed");
+}
+
+#[test]
+fn output_write_failures_include_a_recovery_action() {
+    let missing_parent = temporary_path("missing-output-parent", "dir").join("report.json");
+    let result = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+        .args(["demo", "--json", "--output"])
+        .arg(&missing_parent)
+        .output()
+        .expect("demo command starts");
+    assert_eq!(result.status.code(), Some(2));
+    let error = String::from_utf8(result.stderr).expect("error is utf-8");
+    assert!(error.contains("Could not make a readiness report"));
+    assert!(error.contains("Next step: choose an existing writable folder"));
 }
 
 #[test]

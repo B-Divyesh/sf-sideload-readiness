@@ -17,6 +17,13 @@ test('npm clean installs are locked to the declared package', async () => {
   assert.deepEqual(lock.packages[''].devDependencies, manifest.devDependencies);
 });
 
+test('browser claim commands install their declared clean-clone prerequisites', async () => {
+  const claims = JSON.parse(await getRoot('.factory/claims.json'));
+  const browserClaims = claims.filter(({ test: command }) => command.includes('test:browser'));
+  assert.equal(browserClaims.length, 4);
+  for (const claim of browserClaims) assert.match(claim.test, /^npm ci && npm run test:browser/);
+});
+
 test('the sample report source uses the isolated demo namespace', async () => {
   const app = await get('app.js');
   assert.match(app, /Try it with sample data/);
@@ -47,7 +54,7 @@ test('site has required routes and metadata', async () => {
 
 test('service worker replaces older offline shells during updates', async () => {
   const worker = await get('service-worker.js');
-  assert.match(worker, /sideload-readiness-v3-__ASSET_VERSION__/);
+  assert.match(worker, /sideload-readiness-v4-__ASSET_VERSION__/);
   assert.match(worker, /caches\.keys\(\)/);
   assert.match(worker, /caches\.delete\(key\)/);
   assert.match(worker, /self\.clients\.claim\(\)/);

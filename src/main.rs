@@ -22,9 +22,15 @@ struct Cli {
     /// Write the report to this file (Markdown normally, JSON with --json)
     #[arg(short, long, global = true)]
     output: Option<PathBuf>,
-    /// Inspect this installed package when checking signer visibility
+    /// Inspect this installed package when checking signer identity
     #[arg(short, long, global = true)]
     package: Option<String>,
+    /// Expected SHA-256 signer certificate digest from the approved APK
+    #[arg(long, global = true, requires = "package", value_parser = normalize_sha256)]
+    expected_signer: Option<String>,
+    /// Authorized adb device serial to check when more than one is connected
+    #[arg(long, global = true)]
+    device: Option<String>,
     /// Path to adb; defaults to adb on PATH
     #[arg(long, global = true, default_value = "adb")]
     adb: String,
@@ -70,24 +76,46 @@ struct Device {
     usb_mode: String,
 }
 
+#[derive(Debug)]
+struct UserError {
+    problem: String,
+    next_step: String,
+}
+
+impl UserError {
+    fn new(problem: impl Into<String>, next_step: impl Into<String>) -> Self {
+        Self {
+            problem: problem.into(),
+            next_step: next_step.into(),
+        }
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
     let run_demo = cli.demo || matches!(cli.command, Some(Commands::Demo));
     let result = if run_demo {
         demo_report()
     } else {
-        connected_report(&cli.adb, cli.package.as_deref())
+        connected_report(
+            &cli.adb,
+            cli.package.as_deref(),
+            cli.expected_signer.as_deref(),
+            cli.device.as_deref(),
+        )
     };
-    match result {
-        Ok(report) if run_demo && cli.output.is_none() => {
-            let output = std::env::temp_dir().join(format!("sideload-readiness-demo-{}.md", now()));
-            emit(report, false, Some(output));
-        }
-        Ok(report) => emit(report, cli.json, cli.output),
-        Err(message) => {
-            eprintln!("Could not make a readiness report: {message}\nNext step: connect one authorized Android device, then run `sideload-readiness check`.");
-            std::process::exit(2);
-        }
+    let output = if run_demo && cli.output.is_none() {
+        let extension = if cli.json { "json" } else { "md" };
+        Some(std::env::temp_dir().join(format!("sideload-readiness-demo-{}.{}", now(), extension)))
+    } else {
+        cli.output
+    };
+    if let Err(error) = result.and_then(|report| emit(report, cli.json, output)) {
+        eprintln!(
+            "Could not make a readiness report: {}\nNext step: {}",
+            error.problem, error.next_step
+        );
+        std::process::exit(2);
     }
 }
 
@@ -105,6 +133,68 @@ fn fnv_redact(input: &str) -> String {
         hash = hash.wrapping_mul(0x100000001b3);
     }
     format!("device-{:08x}", hash as u32)
+}
+
+fn normalize_sha256(value: &str) -> Result<String, String> {
+    let normalized: String = value
+        .chars()
+        .filter(|character| !matches!(character, ':' | '-'))
+        .collect::<String>()
+        .to_ascii_lowercase();
+    if normalized.len() != 64
+        || !normalized
+            .chars()
+            .all(|character| character.is_ascii_hexdigit())
+    {
+        return Err("use a 64-digit SHA-256 signer digest; colons or dashes are allowed".into());
+    }
+    Ok(normalized)
+}
+
+fn display_sha256(value: &str) -> String {
+    value
+        .as_bytes()
+        .chunks(2)
+        .map(|pair| String::from_utf8_lossy(pair).to_ascii_uppercase())
+        .collect::<Vec<_>>()
+        .join(":")
+}
+
+fn sha256_from_line(line: &str) -> Option<String> {
+    let mut candidate = String::new();
+    for character in line.chars().chain(std::iter::once(' ')) {
+        if character.is_ascii_hexdigit() || matches!(character, ':' | '-') {
+            candidate.push(character);
+            continue;
+        }
+        if let Ok(digest) = normalize_sha256(&candidate) {
+            return Some(digest);
+        }
+        candidate.clear();
+    }
+    None
+}
+
+fn extract_signer_sha256(package_dump: &str) -> Option<String> {
+    let lines: Vec<_> = package_dump.lines().collect();
+    for (index, line) in lines.iter().enumerate() {
+        let lower = line.to_ascii_lowercase();
+        let signer_context = lower.contains("sha-256")
+            || lower.contains("sha256")
+            || lower.contains("signatures=")
+            || lower.contains("apkcontentsigners");
+        if signer_context {
+            if let Some(digest) = sha256_from_line(line) {
+                return Some(digest);
+            }
+            if let Some(next_line) = lines.get(index + 1) {
+                if let Some(digest) = sha256_from_line(next_line) {
+                    return Some(digest);
+                }
+            }
+        }
+    }
+    None
 }
 
 fn finding(
@@ -153,13 +243,13 @@ fn base_report(
     }
 }
 
-fn demo_report() -> Result<Report, String> {
+fn demo_report() -> Result<Report, UserError> {
     let findings = vec![
         finding("connection", "Authorized USB debugging", "ready", "One authorized sample device is visible to adb.", "Keep the authorization prompt accepted while checking."),
         finding("developer-options", "Developer options", "ready", "Developer options are enabled.", "Leave this unchanged for approved maintenance."),
         finding("usb-mode", "USB data mode", "ready", "The sample device exposes adb over USB.", "Use a data-capable cable if this changes."),
         finding("storage", "Free data storage", "ready", "2.8 GiB free on /data. The 1 GiB safety floor is met.", "Keep the floor before copying an update."),
-        finding("signer", "Package signer visibility", "ready", "The installed sample package exposes signing details.", "Compare the signer with the approved update before installing."),
+        finding("signer", "Package signer match", "ready", "The installed sample signer SHA-256 matches the expected approved signer.", "Keep the approved APK and signer digest with this report."),
         finding("recovery", "Recovery update visibility", "needs-review", "A/B update support is visible, but Android cannot safely prove recovery sideload status while running.", "Read your device's approved recovery instructions before using recovery."),
     ];
     Ok(base_report(
@@ -182,17 +272,49 @@ fn adb(adb: &str, args: &[&str]) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-fn connected_report(adb_bin: &str, package: Option<&str>) -> Result<Report, String> {
-    let devices = adb(adb_bin, &["devices"])?;
-    let line = devices
+fn connected_report(
+    adb_bin: &str,
+    package: Option<&str>,
+    expected_signer: Option<&str>,
+    selected_device: Option<&str>,
+) -> Result<Report, UserError> {
+    let devices = adb(adb_bin, &["devices"]).map_err(|message| {
+        UserError::new(
+            message,
+            "install Android platform-tools, connect one device, and accept its USB debugging prompt.",
+        )
+    })?;
+    let authorized: Vec<&str> = devices
         .lines()
         .skip(1)
-        .find(|line| line.ends_with("\tdevice"))
-        .ok_or("no authorized device was found")?;
-    let serial = line
-        .split_whitespace()
-        .next()
-        .ok_or("adb returned an unreadable device line")?;
+        .filter_map(|line| {
+            let mut fields = line.split_whitespace();
+            let serial = fields.next()?;
+            (fields.next() == Some("device")).then_some(serial)
+        })
+        .collect();
+    let serial = match (selected_device, authorized.as_slice()) {
+        (Some(selected), _) if authorized.contains(&selected) => selected,
+        (Some(_), _) => {
+            return Err(UserError::new(
+                "the selected device is not authorized",
+                "run `adb devices`, authorize the intended device, then pass its serial with `--device SERIAL`.",
+            ))
+        }
+        (None, [serial]) => *serial,
+        (None, []) => {
+            return Err(UserError::new(
+                "no authorized device was found",
+                "connect one Android device, accept its USB debugging prompt, then run the check again.",
+            ))
+        }
+        (None, many) => {
+            return Err(UserError::new(
+                format!("{} authorized devices were found", many.len()),
+                "choose the intended device from `adb devices` and run again with `--device SERIAL`.",
+            ))
+        }
+    };
     let prop = |key: &str| {
         adb(adb_bin, &["-s", serial, "shell", "getprop", key]).unwrap_or_else(|_| "unknown".into())
     };
@@ -222,18 +344,105 @@ fn connected_report(adb_bin: &str, package: Option<&str>) -> Result<Report, Stri
     let package_dump = package.map(|p| {
         adb(adb_bin, &["-s", serial, "shell", "dumpsys", "package", p]).unwrap_or_default()
     });
-    let signer_visible = package_dump
-        .as_deref()
-        .map(|d| d.contains("SigningInfo") || d.contains("signatures="))
-        .unwrap_or(false);
+    let signer = package_dump.as_deref().and_then(extract_signer_sha256);
+    let (signer_status, signer_detail, signer_next_step): (&str, String, String) =
+        match (package, signer, expected_signer) {
+        (None, _, _) => (
+            "needs-review",
+            "No package was selected for signer comparison.".into(),
+            "Run again with `--package com.example.app --expected-signer SHA256` using the approved APK digest.".into(),
+        ),
+        (Some(_), None, _) => (
+            "needs-review",
+            "No stable SHA-256 signer certificate digest was visible for the selected package.".into(),
+            "Confirm the package name and Android support, then compare the approved APK with `apksigner verify --print-certs`.".into(),
+        ),
+        (Some(_), Some(actual), None) => (
+            "needs-review",
+            format!(
+                "Installed signer SHA-256: {}. No expected signer was supplied.",
+                display_sha256(&actual)
+            ),
+            "Run again with `--expected-signer SHA256` from the approved APK before updating.".into(),
+        ),
+        (Some(_), Some(actual), Some(expected)) if actual == expected => (
+            "ready",
+            format!(
+                "Installed signer SHA-256 {} matches the expected approved signer.",
+                display_sha256(&actual)
+            ),
+            "Keep the approved APK and signer digest with this report.".into(),
+        ),
+        (Some(_), Some(actual), Some(expected)) => (
+            "blocked",
+            format!(
+                "Installed signer SHA-256 {} does not match expected {}.",
+                display_sha256(&actual),
+                display_sha256(expected)
+            ),
+            "Stop. Confirm the approved APK and package identity before any update.".into(),
+        ),
+        };
     let ab = prop("ro.build.ab_update") == "true" || !prop("ro.boot.slot_suffix").is_empty();
     let findings = vec![
-        finding("connection", "Authorized USB debugging", "ready", "adb reports an authorized device.", "Keep the device unlocked and authorized during maintenance."),
-        finding("developer-options", "Developer options", if dev_enabled == "1" { "ready" } else { "needs-review" }, if dev_enabled == "1" { "Developer options are enabled." } else { "Developer options were not reported as enabled." }, "Enable Developer options only if your device policy permits it."),
-        finding("usb-mode", "USB data mode", if usb_mode.contains("adb") { "ready" } else { "needs-review" }, format!("Current USB configuration: {usb_mode}."), "Choose a USB data mode and use a data-capable cable."),
-        finding("storage", "Free data storage", if free_gib >= 1.0 { "ready" } else { "blocked" }, format!("{free_gib:.1} GiB free on /data; the safety floor is 1.0 GiB."), "Free storage before copying or applying an update."),
-        finding("signer", "Package signer visibility", if signer_visible { "ready" } else { "needs-review" }, if package.is_some() { "Signer details were not visible for the selected package." } else { "No package was selected for signer inspection." }, "Run again with `--package com.example.app` and compare its signer with the approved APK."),
-        finding("recovery", "Recovery update visibility", "needs-review", if ab { "A/B update capability is visible. Recovery sideload status cannot be proven safely from the running system." } else { "No A/B update capability was reported. Recovery sideload status cannot be proven safely from the running system." }, "Follow only your device maker's approved recovery instructions."),
+        finding(
+            "connection",
+            "Authorized USB debugging",
+            "ready",
+            "adb reports an authorized device.",
+            "Keep the device unlocked and authorized during maintenance.",
+        ),
+        finding(
+            "developer-options",
+            "Developer options",
+            if dev_enabled == "1" {
+                "ready"
+            } else {
+                "needs-review"
+            },
+            if dev_enabled == "1" {
+                "Developer options are enabled."
+            } else {
+                "Developer options were not reported as enabled."
+            },
+            "Enable Developer options only if your device policy permits it.",
+        ),
+        finding(
+            "usb-mode",
+            "USB data mode",
+            if usb_mode.contains("adb") {
+                "ready"
+            } else {
+                "needs-review"
+            },
+            format!("Current USB configuration: {usb_mode}."),
+            "Choose a USB data mode and use a data-capable cable.",
+        ),
+        finding(
+            "storage",
+            "Free data storage",
+            if free_gib >= 1.0 { "ready" } else { "blocked" },
+            format!("{free_gib:.1} GiB free on /data; the safety floor is 1.0 GiB."),
+            "Free storage before copying or applying an update.",
+        ),
+        finding(
+            "signer",
+            "Package signer match",
+            signer_status,
+            signer_detail,
+            signer_next_step,
+        ),
+        finding(
+            "recovery",
+            "Recovery update visibility",
+            "needs-review",
+            if ab {
+                "A/B update capability is visible. Recovery sideload status cannot be proven safely from the running system."
+            } else {
+                "No A/B update capability was reported. Recovery sideload status cannot be proven safely from the running system."
+            },
+            "Follow only your device maker's approved recovery instructions.",
+        ),
     ];
     Ok(base_report(
         "live",
@@ -266,21 +475,24 @@ fn markdown(r: &Report) -> String {
     out
 }
 
-fn emit(report: Report, json: bool, output: Option<PathBuf>) {
+fn emit(report: Report, json: bool, output: Option<PathBuf>) -> Result<(), UserError> {
     let rendered = if json {
         serde_json::to_string_pretty(&report).expect("report serializes")
     } else {
         markdown(&report)
     };
     if let Some(path) = output {
-        fs::write(&path, &rendered).unwrap_or_else(|e| {
-            eprintln!("Could not write {}: {e}", path.display());
-            std::process::exit(2)
-        });
+        fs::write(&path, &rendered).map_err(|error| {
+            UserError::new(
+                format!("could not write {} ({error})", path.display()),
+                "choose an existing writable folder with `--output`, then run the command again.",
+            )
+        })?;
         println!("Wrote {}", path.display());
     } else {
         println!("{rendered}");
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -307,5 +519,21 @@ mod tests {
     #[test]
     fn serial_redactor_changes_the_input() {
         assert_ne!(fnv_redact("ABCD1234"), "ABCD1234");
+    }
+
+    #[test]
+    fn signer_digest_parser_accepts_common_dumpsys_shapes() {
+        let expected = "9a25705e391fb9276555caad4f45428ef1bc8ac4ac65aa367a76fc64bb43cc4d";
+        assert_eq!(
+            extract_signer_sha256(
+                "SigningInfo:\n APK contents signer SHA-256 digest: 9A:25:70:5E:39:1F:B9:27:65:55:CA:AD:4F:45:42:8E:F1:BC:8A:C4:AC:65:AA:36:7A:76:FC:64:BB:43:CC:4D"
+            ),
+            Some(expected.into())
+        );
+        assert_eq!(
+            extract_signer_sha256(&format!("signatures=[{expected}]")),
+            Some(expected.into())
+        );
+        assert_eq!(extract_signer_sha256("SigningInfo only"), None);
     }
 }
