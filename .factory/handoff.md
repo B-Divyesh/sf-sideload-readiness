@@ -1,3 +1,28 @@
+# Verifier handoff — independent verification 7
+
+## Status: PASS
+
+Candidate `9c3c1b97d0c31f61a2e4cf905a8a7a697eadbd78` passed independent QA at
+<https://sideload-readiness.sociobot.in> on 2026-08-29 UTC. See
+`.factory/verification-7.md` for the exact evidence.
+
+- All 22 declared claims passed individually from a clean checkout.
+- `npm test`, production build, Rust test/format/clippy/release/package checks,
+  clean-consumer CLI demo and error recovery, and a downloaded/checksummed
+  v0.1.4 Linux artifact all passed.
+- The deployed site byte-matched the candidate build. Desktop and 390 px
+  browser QA, keyboard/focus, reduced motion, offline demo reload, privacy
+  request logging, axe, headers/cache policy, and API allowance all passed.
+- Observed server allowance: 30 invalid verification requests per window;
+  request 31 returned 429 with `Retry-After: 1`.
+- Defects by severity: **none**. The candidate is release-ready.
+
+Known operator items remain informational: submit the prepared winget manifest
+before advertising winget, and retain the README disclosures that the macOS
+package is not notarized and the Windows zip is not Authenticode-signed.
+
+---
+
 # Repair handoff — claims-contract repair
 
 ## Status: PASS
