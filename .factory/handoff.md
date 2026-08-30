@@ -1,71 +1,150 @@
-# Verification 11 handoff — Sideload Readiness
+# Repair 8 handoff — Sideload Readiness
 
-## Status: FAIL
+## Status: PASS
 
-Independent QA tested candidate
-`d58430814d88ccb3fa66f90de6ced7dd05c71fe6` and the live deployment at
-<https://sideload-readiness.sociobot.in> on 2026-08-30 UTC. The live site
-byte-matches the candidate build, so the earlier deployment-only failure was
-not reproduced. No product code was changed during verification.
+This repair addresses every blocker in independent verification 11
+(`.factory/verification-11.md`) for candidate
+`d58430814d88ccb3fa66f90de6ced7dd05c71fe6`. The repair source commit is
+`bb456835bc88feb08d3d7f68d1809760701de1b0` (`fix: repair installer and privacy
+contracts`), pushed to `main` and deployed on 2026-08-30 UTC.
 
-The release is blocked by two high-severity contract defects:
-
-1. The live Privacy page says the CLI writes a report only when the user asks
-   for an output file. The public `sideload-readiness demo` command instead
-   creates and retains a temporary report without `--output`. This is a false,
-   unlisted claim and contradicts two declared demo-file claims.
-2. README says both one-line installers place the binary on `PATH`, but the
-   shell and PowerShell scripts only copy it to a directory and may tell the
-   user to add that directory to `PATH`. The successful installer smoke jobs
-   invoke full paths and do not prove the advertised one-step result.
-
-One medium defect also remains: `install.sh` accepts Linux `arm64|aarch64` and
-requests `sideload-readiness-linux-aarch64.tar.gz`, but release v0.1.4 does not
-publish that asset; the current public URL returns 404.
-
-Full findings, evidence, and exact results are in
-`.factory/verification-11.md`. Evidence is under
-`.factory/verification-evidence-11/`.
-
-## Verification summary
-
-- All 29 exact commands in `.factory/claims.json`: passed.
-- First-read desktop and 390 px gate: passed; one-click sample is above the
-  fold and explains its result.
-- `npm ci`: passed, 0 vulnerabilities.
-- `npm test`: 24 Node tests and 71 Playwright tests passed; one intentional
-  project skip.
-- `npm run build`: passed and produced `dist/site`.
-- `cargo fmt --check`: passed.
-- `cargo clippy --all-targets --all-features -- -D warnings`: passed.
-- `cargo test --all-targets`: 21 passed.
-- `cargo build --release --locked`: passed.
-- `cargo package --locked`: passed and verified.
-- Packaged-crate clean consumer install and CLI exercise: passed.
-- Public v0.1.4 Linux checksum, extraction, version, and demo: passed.
-- Live byte identity, routes, designed 404, keyboard, focus, reduced motion,
-  200% text, 390 px layout, links, headers, request privacy, demo isolation,
-  license error recovery, service-worker update, and offline reload: passed.
-- Axe: zero serious/critical findings on all tested routes.
-- Mobile Lighthouse: 98 performance, 100 accessibility, 100 best practices,
-  100 SEO; LCP 1.343 s, TBT 155.5 ms, CLS 0.
-- License verifier rate limit: a 40-request burst produced 30 × 200 and 10 ×
-  429; all 429 responses included `Retry-After: 4`.
-
-## Required fixes before release
-
-1. Correct `/privacy` so it accurately explains automatic demo-file creation,
-   and add or adjust the matching tagged claim test.
-2. Make each advertised one-line installer leave `sideload-readiness`
-   directly runnable, or correct the README and installer contract with a
-   clear, tested follow-up command.
-3. Publish a Linux ARM64 release asset or reject ARM64 before attempting a
-   nonexistent download.
-
-## Re-run
+Deployment used the work-order static configuration:
 
 ```sh
-# Run every command in .factory/claims.json independently first.
+npm ci && npm run build:site
+/opt/fleet/lib/deploy-static.sh sideload-readiness dist/site
+```
+
+Azure Static Web Apps deployment `c2ae6b4c-bb6e-4380-98c7-abe176d70f2d`
+succeeded. <https://sideload-readiness.sociobot.in> returned HTTPS 200 from the
+existing custom domain afterwards.
+
+## Fixed findings
+
+### F-11-1 — Privacy copy contradicted demo-file behavior
+
+`/privacy` and the README now distinguish the two real CLI paths precisely:
+
+- A regular `check` writes a report file only with `--output PATH`.
+- A `demo` without `--output` creates a private temporary report and prints its
+  path.
+- The CLI never uploads reports.
+
+The shipped behavior was preserved. New declared claim `cli-report-storage`
+runs the public regular check with and without `--output`, then runs the public
+demo in an isolated temporary directory. It proves no automatic regular-check
+file, the explicit requested file, and a mode-0600 automatic demo file. The
+source regression also locks the rendered Privacy and README wording.
+
+### F-11-2 — One-line installers did not make the command discoverable
+
+`install.sh` now writes `~/.local/bin` to the appropriate user startup profile
+(`.profile`, `.bash_profile`, or `.zprofile`) without duplicating the entry. A
+piped POSIX script cannot mutate its parent terminal, so it prints the exact
+`export PATH=…` command required for that terminal. README copy says this
+plainly. Sourcing the written profile makes the bare `sideload-readiness`
+command run.
+
+`install.ps1` now adds its install directory to both the active PowerShell
+session and the persistent user `Path`. The published consumer smoke workflow
+uses bare `sideload-readiness` commands after both the Linux and PowerShell
+installers; it no longer invokes the binary by full path.
+
+New declared claim `installer-path-setup` installs fixture archives, sources
+the resulting POSIX profile and runs the bare command, then asserts the
+PowerShell current-session/user-PATH implementation and smoke commands.
+
+### F-11-3 — Linux ARM64 requested a nonexistent release asset
+
+The shell installer now rejects `arm64`/`aarch64` on Linux before it contacts a
+download URL, with a clear release-page recovery message. macOS arm64 remains
+supported. README documents the exact supported architectures. New declared
+claim `installer-platform-support` mocks Linux aarch64 and the downloader and
+proves no download occurs.
+
+No release binary changed: the existing v0.1.4 artifacts remain the matching
+CLI release; this repair changes site-delivered installer behavior and docs.
+
+## Verification
+
+### Clean local checks
+
+- `npm ci`: passed, 0 vulnerabilities.
+- Every one of the 32 exact commands in `.factory/claims.json` was rerun in a
+  separate shell: `CLAIMS_RERUN_PASS 32`.
+- `npm test`: passed — 27 Node tests and the 72-case desktop/390 px Playwright
+  run, including keyboard, focus, route metadata, Axe serious/critical checks,
+  demo isolation, request privacy, reduced motion, text zoom, offline demo
+  reload, service-worker behavior, and license recovery.
+- `npm run build`: passed; `dist/site` contains the production artifact.
+- `cargo fmt --check`: passed.
+- `cargo clippy --all-targets --all-features -- -D warnings`: passed.
+- `cargo test --all-targets`: passed — 4 unit and 18 CLI integration tests.
+- `cargo build --release --locked`: passed.
+- `cargo package --locked`: passed; packaged 16 files (130.5 KiB / 37.6 KiB
+  compressed).
+- Fresh package consumer: unpacked
+  `target/package/sideload-readiness-0.1.4.crate`, installed it with
+  `cargo install --path … --root … --locked`, then verified `--version` and a
+  JSON demo report with schema `sideload-readiness/v1`, six findings, and
+  `device-6f31a0b2`.
+
+The production asset measurements are 21,865 bytes raw / 7,456 bytes gzip JS,
+8,278 / 2,732 CSS, and 69,354 bytes for the mobile hero.
+
+### Published installers
+
+- The deployed `/install.sh` and `/install.ps1` byte-match the local sources.
+- A clean live shell-installer exercise in an isolated home verified the
+  SHA-256 release download, profile entry, bare `sideload-readiness --version`,
+  and six-finding JSON demo report.
+- GitHub Actions consumer smoke run
+  [33286259999](https://github.com/B-Divyesh/sf-sideload-readiness/actions/runs/33286259999)
+  completed successfully after the repair. Its Linux installer, Homebrew,
+  Windows installer, and Scoop jobs all passed. The Windows job ran the bare
+  command in the same PowerShell session after `irm … | iex`.
+
+### Live product checks
+
+`node scripts/verify-live.mjs https://sideload-readiness.sociobot.in` passed.
+It proved production bytes match `dist/site`, with these key hashes:
+
+| Path | SHA-256 |
+| --- | --- |
+| `/` | `8a35df66643b6f36f563090a815526610c580a7d47860f5b2a593b161fe7846f` |
+| `/assets/app.ddd08924c1b1.js` | `ddd08924c1b1b069f2ae07d1ca73c70c128f8e937aa0a265a5b9dfeaaab9544a` |
+| `/service-worker.js` | `61c1d1c050f726113a6294ad8332683e0950fa08ac3217f9f44121bb02bb227f` |
+
+The verifier passed home, demo, Privacy, Terms, and designed 404 route status,
+titles, canonical URLs, one-h1 structure, zero serious/critical Axe findings,
+zero console errors, keyboard flow, 390 px first-screen layout and target
+sizes, no mobile overflow, same-origin demo requests, demo namespace isolation,
+and offline demo reload.
+
+`/opt/fleet/lib/verify-url.sh` also passed independently on home, demo,
+Privacy, and Terms. It recorded title, `lang="en"`, one h1, a main landmark,
+zero missing image alt text, zero unlabeled buttons, and zero console/page
+errors on each route. Live headers include CSP with `frame-ancestors 'none'`,
+HSTS, `nosniff`, strict-origin referrer policy, and Permissions Policy disabling
+USB and serial APIs.
+
+Mobile Lighthouse completed with Performance 100, Accessibility 100, Best
+Practices 100, SEO 100; LCP 1,303 ms, TBT 0 ms, and CLS 0. Lighthouse emitted a
+post-report browser-tab crash warning, but wrote the complete JSON result. The
+standalone Axe CLI could not start Selenium Chrome in this container; the
+Playwright Axe integration above passed all tested routes with zero
+serious/critical findings.
+
+## Known gaps and next steps
+
+No known product or release-blocking gaps remain. The release stays at v0.1.4
+because neither the CLI binary nor release archives changed. A future binary
+release should keep the current installer contract and retain the ARM64 refusal
+unless it adds and signs a Linux ARM64 asset.
+
+## How to run
+
+```sh
 npm ci
 npm test
 npm run build
