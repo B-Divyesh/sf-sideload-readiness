@@ -1,0 +1,135 @@
+{
+  "url": "https://sideload-readiness.sociobot.in/?demo=1",
+  "scrollY": 0,
+  "visible": [
+    {
+      "tag": "A",
+      "text": "SR/01",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "A",
+      "text": "Demo",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "A",
+      "text": "Install",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "A",
+      "text": "Fleet",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "A",
+      "text": "Privacy",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "STRONG",
+      "text": "Demo — sample data, nothing is saved.",
+      "top": 91,
+      "bottom": 112.9
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Reset demo",
+      "top": 80,
+      "bottom": 124
+    },
+    {
+      "tag": "A",
+      "text": "Start for real",
+      "top": 80,
+      "bottom": 124
+    },
+    {
+      "tag": "P",
+      "text": "Demo / sample device",
+      "top": 194,
+      "bottom": 209
+    },
+    {
+      "tag": "H1",
+      "text": "Find the next safe step",
+      "top": 223,
+      "bottom": 380.3
+    },
+    {
+      "tag": "P",
+      "text": "This sample shows a recovery check that needs review before an approved update.",
+      "top": 404.3,
+      "bottom": 461.6
+    },
+    {
+      "tag": "STRONG",
+      "text": "READINESS REPORT / SAMPLE",
+      "top": 611.6,
+      "bottom": 631.6
+    },
+    {
+      "tag": "LI",
+      "text": "Authorized USB debuggingreadyOne authorized sample device is visible to adb.Next: Keep the authorization prompt accepted while checking.",
+      "top": 653.5,
+      "bottom": 765.9
+    },
+    {
+      "tag": "STRONG",
+      "text": "Authorized USB debugging",
+      "top": 670.5,
+      "bottom": 747.9
+    },
+    {
+      "tag": "P",
+      "text": "One authorized sample device is visible to adb.Next: Keep the authorization prompt accepted while checking.",
+      "top": 670.5,
+      "bottom": 738.3
+    },
+    {
+      "tag": "LI",
+      "text": "Developer optionsreadyDeveloper options are enabled.Next: Leave this unchanged for approved maintenance.",
+      "top": 765.9,
+      "bottom": 852.6
+    },
+    {
+      "tag": "STRONG",
+      "text": "Developer options",
+      "top": 782.9,
+      "bottom": 834.6
+    },
+    {
+      "tag": "P",
+      "text": "Developer options are enabled.Next: Leave this unchanged for approved maintenance.",
+      "top": 782.9,
+      "bottom": 828.2
+    },
+    {
+      "tag": "LI",
+      "text": "USB data modereadyThe sample device exposes adb over USB.Next: Use a data-capable cable if this changes.",
+      "top": 852.6,
+      "bottom": 939.3
+    },
+    {
+      "tag": "STRONG",
+      "text": "USB data mode",
+      "top": 869.6,
+      "bottom": 921.3
+    },
+    {
+      "tag": "P",
+      "text": "The sample device exposes adb over USB.Next: Use a data-capable cable if this changes.",
+      "top": 869.6,
+      "bottom": 914.8
+    }
+  ],
+  "storage": {
+    "demo:sideload-readiness": "{\"score\":83,\"device\":{\"id\":\"device-6f31a0b2\",\"android\":\"15 (sample)\",\"usb\":\"mtp,adb\"},\"findings\":[[\"Authorized USB debugging\",\"ready\",\"One authorized sample device is visible to adb.\",\"Keep the authorization prompt accepted while checking.\"],[\"Developer options\",\"ready\",\"Developer options are enabled.\",\"Leave this unchanged for approved maintenance.\"],[\"USB data mode\",\"ready\",\"The sample device exposes adb over USB.\",\"Use a data-capable cable if this changes.\"],[\"Free data storage\",\"ready\",\"2.8 GiB free on /data. The 1 GiB safety floor is met.\",\"Keep the floor before copying an update.\"],[\"Package signer match\",\"ready\",\"The installed sample signer SHA-256 matches the expected approved signer.\",\"Keep the approved APK and signer digest with this report.\"],[\"Recovery update visibility\",\"needs-review\",\"A/B update support is visible, but Android cannot safely prove recovery sideload status while running.\",\"Read your device’s approved recovery instructions before using recovery.\"]]}"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "url": "https://sideload-readiness.sociobot.in/?demo=1",
+  "scrollY": 0,
+  "visible": [
+    {
+      "tag": "A",
+      "text": "SR/01",
+      "top": 12,
+      "bottom": 56
+    },
+    {
+      "tag": "A",
+      "text": "Demo",
+      "top": 12,
+      "bottom": 56
+    },
+    {
+      "tag": "A",
+      "text": "Install",
+      "top": 12,
+      "bottom": 56
+    },
+    {
+      "tag": "A",
+      "text": "Fleet",
+      "top": 12,
+      "bottom": 56
+    },
+    {
+      "tag": "A",
+      "text": "Privacy",
+      "top": 12,
+      "bottom": 56
+    },
+    {
+      "tag": "STRONG",
+      "text": "Demo — sample data, nothing is saved.",
+      "top": 80,
+      "bottom": 101.9
+    },
+    {
+      "tag": "BUTTON",
+      "text": "Reset demo",
+      "top": 113.9,
+      "bottom": 157.9
+    },
+    {
+      "tag": "A",
+      "text": "Start for real",
+      "top": 113.9,
+      "bottom": 157.9
+    },
+    {
+      "tag": "P",
+      "text": "Demo / sample device",
+      "top": 227.9,
+      "bottom": 242.9
+    },
+    {
+      "tag": "H1",
+      "text": "Find the next safe step",
+      "top": 256.9,
+      "bottom": 335.5
+    },
+    {
+      "tag": "P",
+      "text": "This sample shows a recovery check that needs review before an approved update.",
+      "top": 359.5,
+      "bottom": 445.6
+    },
+    {
+      "tag": "STRONG",
+      "text": "READINESS REPORT / SAMPLE",
+      "top": 577.6,
+      "bottom": 597.6
+    },
+    {
+      "tag": "LI",
+      "text": "Authorized USB debuggingreadyOne authorized sample device is visible to adb.Next: Keep the authorization prompt accepted while checking.",
+      "top": 682.9,
+      "bottom": 858.6
+    },
+    {
+      "tag": "STRONG",
+      "text": "Authorized USB debugging",
+      "top": 698.9,
+      "bottom": 723.2
+    },
+    {
+      "tag": "P",
+      "text": "One authorized sample device is visible to adb.Next: Keep the authorization prompt accepted while checking.",
+      "top": 751.2,
+      "bottom": 841.6
+    }
+  ],
+  "storage": {
+    "demo:sideload-readiness": "{\"score\":83,\"device\":{\"id\":\"device-6f31a0b2\",\"android\":\"15 (sample)\",\"usb\":\"mtp,adb\"},\"findings\":[[\"Authorized USB debugging\",\"ready\",\"One authorized sample device is visible to adb.\",\"Keep the authorization prompt accepted while checking.\"],[\"Developer options\",\"ready\",\"Developer options are enabled.\",\"Leave this unchanged for approved maintenance.\"],[\"USB data mode\",\"ready\",\"The sample device exposes adb over USB.\",\"Use a data-capable cable if this changes.\"],[\"Free data storage\",\"ready\",\"2.8 GiB free on /data. The 1 GiB safety floor is met.\",\"Keep the floor before copying an update.\"],[\"Package signer match\",\"ready\",\"The installed sample signer SHA-256 matches the expected approved signer.\",\"Keep the approved APK and signer digest with this report.\"],[\"Recovery update visibility\",\"needs-review\",\"A/B update support is visible, but Android cannot safely prove recovery sideload status while running.\",\"Read your device’s approved recovery instructions before using recovery.\"]]}"
+  }
+}

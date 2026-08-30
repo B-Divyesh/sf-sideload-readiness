@@ -1,0 +1,16 @@
+{
+  "command": "sideload-readiness demo --json",
+  "working_directory": "fresh temporary directory",
+  "output_file_mode": "0600",
+  "schema": "sideload-readiness/v1",
+  "mode": "demo",
+  "score": 83,
+  "summary": "Ready for a cautious approved-package update.",
+  "recovery_finding": {
+    "label": "Recovery update visibility",
+    "status": "needs-review",
+    "next_step": "Read your device's approved recovery instructions before using recovery."
+  },
+  "finding_count": 6,
+  "recovery_item_count": 5
+}

@@ -1,0 +1,226 @@
+[
+  {
+    "id": "demo-report",
+    "test": "cargo test --test cli claim_demo_report_is_redacted_and_actionable -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 23.42
+  },
+  {
+    "id": "json-report",
+    "test": "cargo test --test cli claim_demo_json_is_machine_readable -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.08
+  },
+  {
+    "id": "redacted-id",
+    "test": "cargo test --test cli claim_exported_device_id_is_redacted -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.09
+  },
+  {
+    "id": "read-only-checks",
+    "test": "cargo test --test cli claim_device_checks_are_read_only_and_non_mutating -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.09
+  },
+  {
+    "id": "unauthorized-device",
+    "test": "cargo test --test cli claim_unauthorized_devices_are_refused_with_a_next_step -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.07
+  },
+  {
+    "id": "signer-continuity",
+    "test": "cargo test --test cli claim_signer_identity_is_extracted_and_compared -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.1
+  },
+  {
+    "id": "signer-unreadable",
+    "test": "cargo test --test cli unreadable_installed_apk_is_never_reported_ready -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.08
+  },
+  {
+    "id": "diagnostic-report",
+    "test": "cargo test --test cli claim_live_report_covers_each_documented_check_and_recovery_outcome -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.09
+  },
+  {
+    "id": "example-schema",
+    "test": "cargo test --test cli claim_example_report_matches_the_public_demo_schema_and_values -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.07
+  },
+  {
+    "id": "device-selection",
+    "test": "cargo test --test cli multiple_devices_require_an_explicit_redacted_selection -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.08
+  },
+  {
+    "id": "demo-no-adb",
+    "test": "cargo test --test cli claim_demo_uses_no_adb_and_writes_a_temporary_report -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.07
+  },
+  {
+    "id": "cli-report-storage",
+    "test": "cargo test --test cli claim_cli_report_storage_matches_privacy_disclosure -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.09
+  },
+  {
+    "id": "private-demo-file",
+    "test": "cargo test --test cli claim_automatic_demo_file_is_private_and_never_reuses_a_name -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.07
+  },
+  {
+    "id": "explicit-output-replacement",
+    "test": "cargo test --test cli claim_explicit_demo_output_replaces_the_requested_file -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.07
+  },
+  {
+    "id": "single-device-free",
+    "test": "cargo test --test cli claim_single_device_check_is_free -- --exact",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.09
+  },
+  {
+    "id": "local-demo",
+    "test": "npm ci && npm run test:browser -- --project=chromium --grep '@claim:local-demo'",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 4.76
+  },
+  {
+    "id": "browser-demo-no-device",
+    "test": "npm ci && npm run test:browser -- --project=chromium --grep '@claim:browser-demo-no-device'",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 4.58
+  },
+  {
+    "id": "privacy",
+    "test": "npm ci && npm run test:browser -- --project=chromium --grep '@claim:privacy'",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 4.59
+  },
+  {
+    "id": "fleet-review",
+    "test": "npm ci && npm run test:browser -- --project=chromium --grep '@claim:fleet-review'",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 4.37
+  },
+  {
+    "id": "license-verification",
+    "test": "npm ci && npm run test:browser -- --project=chromium --grep '@claim:license-verification'",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 5.84
+  },
+  {
+    "id": "license-retention",
+    "test": "npm ci && npm run test:browser -- --project=chromium --grep '@claim:license-retention'",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 4.35
+  },
+  {
+    "id": "fleet-checkout",
+    "test": "npm run test:billing",
+    "status": 1,
+    "signal": null,
+    "duration_seconds": 0.34
+  },
+  {
+    "id": "verified-installer",
+    "test": "node --test --test-name-pattern='@claim:verified-installer' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.25
+  },
+  {
+    "id": "installer-path-setup",
+    "test": "node --test --test-name-pattern='@claim:installer-path-setup' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.15
+  },
+  {
+    "id": "installer-platform-support",
+    "test": "node --test --test-name-pattern='@claim:installer-platform-support' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.16
+  },
+  {
+    "id": "platform-packaging",
+    "test": "node --test --test-name-pattern='@claim:platform-packaging' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.16
+  },
+  {
+    "id": "release-manifest",
+    "test": "node --test --test-name-pattern='@claim:release-manifest' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.2
+  },
+  {
+    "id": "release-signatures",
+    "test": "node --test --test-name-pattern='@claim:release-signatures' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 4.56
+  },
+  {
+    "id": "release-checksums",
+    "test": "node --test --test-name-pattern='@claim:release-checksums' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.61
+  },
+  {
+    "id": "unsigned-platform-disclosure",
+    "test": "node --test --test-name-pattern='@claim:unsigned-platform-disclosure' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.36
+  },
+  {
+    "id": "billing-provider-boundary",
+    "test": "node --test --test-name-pattern='@claim:billing-provider-boundary' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.18
+  },
+  {
+    "id": "published-installer-paths",
+    "test": "node --test --test-name-pattern='@claim:published-installer-paths' tests/*.test.mjs",
+    "status": 0,
+    "signal": null,
+    "duration_seconds": 0.87
+  }
+]

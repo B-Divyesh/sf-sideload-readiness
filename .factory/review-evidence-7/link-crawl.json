@@ -1,0 +1,18 @@
+[
+  {"text":"Skip to report","href":"https://sideload-readiness.sociobot.in/#main","status":200},
+  {"text":"Return to Sideload Readiness","href":"https://sideload-readiness.sociobot.in/","status":200},
+  {"text":"Demo","href":"https://sideload-readiness.sociobot.in/demo","status":200},
+  {"text":"Install","href":"https://sideload-readiness.sociobot.in/#install","status":200},
+  {"text":"Fleet","href":"https://sideload-readiness.sociobot.in/#fleet","status":200},
+  {"text":"Privacy","href":"https://sideload-readiness.sociobot.in/privacy","status":200},
+  {"text":"Try it with sample data","href":"https://sideload-readiness.sociobot.in/?demo=1","status":200},
+  {"text":"Choose Mac download on GitHub (external)","href":"https://github.com/B-Divyesh/sf-sideload-readiness/releases","status":200},
+  {"text":"Linux and macOS installer","href":"https://sideload-readiness.sociobot.in/install.sh","status":200},
+  {"text":"PowerShell installer","href":"https://sideload-readiness.sociobot.in/install.ps1","status":200},
+  {"text":"Apple silicon Mac (.pkg) on GitHub (external)","href":"https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.4/sideload-readiness-macos-aarch64.pkg","status":302,"redirect":"release-assets.githubusercontent.com"},
+  {"text":"Intel Mac (.pkg) on GitHub (external)","href":"https://github.com/B-Divyesh/sf-sideload-readiness/releases/download/v0.1.4/sideload-readiness-macos-x86_64.pkg","status":302,"redirect":"release-assets.githubusercontent.com"},
+  {"text":"Buy fleet review through Sociobot (external checkout)","href":"https://api.sociobot.in/api/v1/products/sideload-readiness/checkout","status":500},
+  {"text":"Terms","href":"https://sideload-readiness.sociobot.in/terms","status":200},
+  {"text":"Param Factory on Sociobot (external)","href":"https://sociobot.in/","status":200},
+  {"text":"404-page skip link","href":"https://sideload-readiness.sociobot.in/review-7-deliberately-missing#main","status":404,"expected":true}
+]

@@ -1,0 +1,137 @@
+{
+  "title": "Sideload Readiness — Check Android update safety",
+  "h1": [
+    "Check Android update safety"
+  ],
+  "viewport": {
+    "w": 1440,
+    "h": 900
+  },
+  "visibleLeafText": [
+    {
+      "tag": "SPAN",
+      "text": "/",
+      "top": 23.5,
+      "bottom": 46.5
+    },
+    {
+      "tag": "A",
+      "text": "Demo",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "A",
+      "text": "Install",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "A",
+      "text": "Fleet",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "A",
+      "text": "Privacy",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "tag": "P",
+      "text": "Android maintenance / read-only checks",
+      "top": 154,
+      "bottom": 169
+    },
+    {
+      "tag": "H1",
+      "text": "Check Android update safety",
+      "top": 183,
+      "bottom": 497.5
+    },
+    {
+      "tag": "P",
+      "text": "For people who maintain approved sideloaded apps when device rules or recovery paths change.",
+      "top": 521.5,
+      "bottom": 578.9
+    },
+    {
+      "tag": "A",
+      "text": "Try it with sample data",
+      "top": 602.9,
+      "bottom": 652.7
+    },
+    {
+      "tag": "P",
+      "text": "See a redacted report and the next safe step.",
+      "top": 605.4,
+      "bottom": 650.1
+    },
+    {
+      "tag": "LI",
+      "text": "Read-only adb checks",
+      "top": 688.7,
+      "bottom": 704.7
+    },
+    {
+      "tag": "LI",
+      "text": "Device IDs are redacted",
+      "top": 712.7,
+      "bottom": 728.7
+    },
+    {
+      "tag": "LI",
+      "text": "Free for one device",
+      "top": 736.7,
+      "bottom": 752.7
+    }
+  ],
+  "buttons": [
+    {
+      "text": "SR/01",
+      "href": "https://sideload-readiness.sociobot.in/",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "text": "Demo",
+      "href": "https://sideload-readiness.sociobot.in/demo",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "text": "Install",
+      "href": "https://sideload-readiness.sociobot.in/#install",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "text": "Fleet",
+      "href": "https://sideload-readiness.sociobot.in/#fleet",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "text": "Privacy",
+      "href": "https://sideload-readiness.sociobot.in/privacy",
+      "top": 13,
+      "bottom": 57
+    },
+    {
+      "text": "Try it with sample data",
+      "href": "https://sideload-readiness.sociobot.in/?demo=1",
+      "top": 602.9,
+      "bottom": 652.7
+    }
+  ],
+  "scrollY": 0,
+  "status": 200,
+  "requests": [
+    "https://sideload-readiness.sociobot.in/",
+    "https://sideload-readiness.sociobot.in/assets/style.153fe0711a98.css",
+    "https://sideload-readiness.sociobot.in/assets/app.caece078a880.js",
+    "https://sideload-readiness.sociobot.in/public/hero-concrete-moss-768.webp"
+  ],
+  "consoleErrors": []
+}
