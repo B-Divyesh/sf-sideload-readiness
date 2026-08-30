@@ -1,25 +1,43 @@
-# Verification 10 handoff — Sideload Readiness
+# Review 4 handoff — Sideload Readiness
 
-## Status: PASS
+## Status: FAIL
 
-Independent QA accepted candidate `d2e1e5fa4706c3c61468eb3ecab99f25c7760b86` at <https://sideload-readiness.sociobot.in> on 2026-08-29.
+Adversarial first-read review 4 inspected candidate
+`e653e7713cdd8bc0668c4de1007b246b2be406bf` and the byte-matching deployment at
+<https://sideload-readiness.sociobot.in> on 2026-08-30. The full report is
+[review-4.md](review-4.md).
 
-The fresh checkout passed all 29 declared claims, Rust formatting/lints/tests and crate packaging, `npm test` (24 Node + 70 Playwright tests), and the exact production build. The installed public CLI v0.1.4 was exercised from a clean consumer root: help, parseable six-finding redacted demo JSON, malformed signer input, and missing-adb recovery all behaved correctly.
+One blocking finding remains: `F-4-1`. The visitor-facing claim that real
+single-device checks are free has a green tagged test, but that test runs only
+`sideload-readiness demo`. It never exercises the real `check` path without a
+license. Replace it with a one-authorized-device fake-adb `check` test that has
+no license or account state, then rerun the claims loop.
 
-The live deployment byte-matches the candidate build for its HTML, JS, CSS, service worker, and hero asset. Its cold first screen plainly explains the job, audience, and one-click sample action. Desktop and 390 px mobile, keyboard, focus, reduced motion, browser demo isolation, offline reload, privacy request logging, response headers, current release signatures/checksums, and live axe all passed. No analytics or third-party runtime requests were observed.
+No product code was modified. The cold mobile/desktop first screen, one-click
+browser demo, reset/exit isolation, real-data sentinel, device-API isolation,
+same-origin request log, offline reload, routes, metadata, designed 404,
+keyboard/focus behavior, live Axe checks, links, and distinct visual identity
+otherwise passed. All 13 findings from reviews 1–3 were independently confirmed
+fixed in both production and source.
 
-The public license verifier enforces 429 rate limiting with `Retry-After` (observed 0–1 seconds after a burst). See [verification-10.md](verification-10.md) for the exact evidence, asset hashes, Lighthouse results, and the short-window allowance observation.
+## Verification performed
 
-Evidence is under `.factory/verification-evidence-10/`. There are no known release-blocking, high, medium, or low defects. A physical Android device was not available; the comprehensive fake-adb and signed-APK integration matrix covers the read-only diagnostic paths.
+- All 29 exact `.factory/claims.json` commands ran separately from the clean
+  no-hardlink clone `/tmp/sideload-readiness-review4.KmnFPI/repo`; all commands
+  exited successfully, with `single-device-free` rejected on proof relevance.
+- `cargo fmt --check`: passed.
+- `cargo clippy --all-targets --all-features -- -D warnings`: passed.
+- `cargo test --all-targets`: 21 passed.
+- `npm test`: 24 Node tests passed; 69 Playwright tests passed; one intentional
+  project-specific test was skipped.
+- `npm run build`: passed and produced `dist/site`.
+- `node scripts/verify-live.mjs https://sideload-readiness.sociobot.in`: passed
+  deployment identity, route, metadata, demo, mobile, offline, privacy, console,
+  and accessibility checks.
+- The CLI demo ran in a fresh temporary directory and produced a mode-0600,
+  parseable six-finding JSON report with five recovery items.
 
-## Re-run
+## Next step
 
-```sh
-npm ci
-cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all-targets
-npm test
-npm run build
-node scripts/verify-live.mjs https://sideload-readiness.sociobot.in
-```
+Fix only the test/sandbox mismatch in F-4-1, then rerun the complete review.
+Zero remaining findings is required for PASS.
