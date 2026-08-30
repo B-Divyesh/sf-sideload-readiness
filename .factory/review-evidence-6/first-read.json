@@ -1,0 +1,110 @@
+{
+  "url": "https://sideload-readiness.sociobot.in",
+  "capturedAt": "2026-08-30T03:36:18.644Z",
+  "contexts": {
+    "mobile": {
+      "status": 200,
+      "title": "Sideload Readiness — Check Android update safety",
+      "h1": "Check Android update safety",
+      "h1Count": 1,
+      "bodyText": "Skip to report\nSR\n/\n01\nDemo\nInstall\nFleet\nPrivacy\nSideload Readiness — Check Android update safety loaded\n\nANDROID MAINTENANCE / READ-ONLY CHECKS\n\nCheck Android update safety\n\nFor people who maintain approved sideloaded apps when device rules or recovery paths change.\n\nTry it with sample data\n\nSee a redacted report and the next safe step.\n\nRead-only adb checks\nDevice IDs are redacted\nFree for one device\nSample readiness report\nREADINESS REPORT / SAMPLE\ndevice-6f31a0b2 · Android 15 (sample)\n83% · Fix one item before recovery\nAuthorized USB debugging\nREADY\n\nOne authorized sample device is visible to adb.\nNext: Keep the authorization prompt accepted while checking.\n\nDeveloper options\nREADY\n\nDeveloper options are enabled.\nNext: Leave this unchanged for approved maintenance.\n\nUSB data mode\nREADY\n\nThe sample device exposes adb over USB.\nNext: Use a data-capable cable if this changes.\n\nFree data storage\nREADY\n\n2.8 GiB free on /data. The 1 GiB safety floor is met.\nNext: Keep the floor before copying an update.\n\nPackage signer match\nREADY\n\nThe installed sample signer SHA-256 matches the expected approved signer.\nNext: Keep the approved APK and signer digest with this report.\n\nRecovery update visibility\nNEEDS REVIEW\n\nA/B update support is visible, but Android cannot safely prove recovery sideload status while running.\nNext: Read your device’s approved recovery instructions before using recovery.\n\nRecovery checklist\nKeep the approved APK and its known-good version.\nRecord the app package and signer before an update.\nStop after an error and save the report before retrying.\nInstall the command-line tool\n$ sideload-readiness demo --output readiness.md\nWrote readiness.md\n\n$ sideload-readiness check --package com.example.approved\n  --expected-signer 9A:25:70:…\n83% — Signer matched. Review recovery before updating.\n\nThe command asks adb for status. It does not install apps, unlock devices, or change Android settings.\n\nThe macOS package and Windows app are unsigned. Verify the matching Sigstore bundle before installation.\n\nOpen release downloads\nLinux and macOS installer\nPowerShell installer\n\nChecking published downloads.\n\nHow the readiness check works\n01\nConnect one Android device\n\nAccept Android’s USB debugging prompt. Choose a device when adb lists more than one.\n\n02\nCheck device and app readiness\n\nCompare the installed signer SHA-256 with the approved APK. Read storage, USB state, and recovery clues.\n\n03\nFollow the report’s next step\n\nSave a redacted report. Follow its next step or stop before an update.\n\nWhat this tool does and does not do\nWhat the CLI checks\n\nMake a device-specific report from read-only adb queries. It explains what to check next.\n\nWhat the CLI never does\n\nIt never bypasses Android controls, unlocks bootloaders, or distributes APKs.\n\nSMALL IT TEAMS\n\nFleet report review\n\nFleet review is a $39 one-time license. It adds a local report queue and package-status table. Single-device checks stay free.\n\n$39 one-time purchase\n\nBuy fleet review\n\nHave a license? Paste it here.\nVerify fleet license\n\nVerification happens with Sociobot when you choose this button.\n\nRead-only Android update checks for cautious maintainers.\n\nPrivacy\nTerms\nBuilt by Param Factory\nv0.1.4",
+      "scrollY": 0,
+      "action": {
+        "x": 16,
+        "y": 442.3125,
+        "width": 243.671875,
+        "height": 48.3125
+      },
+      "outcome": {
+        "x": 16,
+        "y": 505.625,
+        "width": 336.171875,
+        "height": 22.359375
+      },
+      "facts": [
+        {
+          "text": "Read-only adb checks",
+          "box": {
+            "x": 16,
+            "y": 563.984375,
+            "width": 358,
+            "height": 16
+          }
+        },
+        {
+          "text": "Device IDs are redacted",
+          "box": {
+            "x": 16,
+            "y": 587.984375,
+            "width": 358,
+            "height": 16
+          }
+        },
+        {
+          "text": "Free for one device",
+          "box": {
+            "x": 16,
+            "y": 611.984375,
+            "width": 358,
+            "height": 16
+          }
+        }
+      ],
+      "consoleErrors": [],
+      "localStorage": {},
+      "cookies": []
+    },
+    "desktop": {
+      "status": 200,
+      "title": "Sideload Readiness — Check Android update safety",
+      "h1": "Check Android update safety",
+      "h1Count": 1,
+      "bodyText": "Skip to report\nSR\n/\n01\nDemo\nInstall\nFleet\nPrivacy\nSideload Readiness — Check Android update safety loaded\n\nANDROID MAINTENANCE / READ-ONLY CHECKS\n\nCheck Android update safety\n\nFor people who maintain approved sideloaded apps when device rules or recovery paths change.\n\nTry it with sample data\n\nSee a redacted report and the next safe step.\n\nRead-only adb checks\nDevice IDs are redacted\nFree for one device\nSample readiness report\nREADINESS REPORT / SAMPLE\ndevice-6f31a0b2 · Android 15 (sample)\n83% · Fix one item before recovery\nAuthorized USB debugging\nREADY\n\nOne authorized sample device is visible to adb.\nNext: Keep the authorization prompt accepted while checking.\n\nDeveloper options\nREADY\n\nDeveloper options are enabled.\nNext: Leave this unchanged for approved maintenance.\n\nUSB data mode\nREADY\n\nThe sample device exposes adb over USB.\nNext: Use a data-capable cable if this changes.\n\nFree data storage\nREADY\n\n2.8 GiB free on /data. The 1 GiB safety floor is met.\nNext: Keep the floor before copying an update.\n\nPackage signer match\nREADY\n\nThe installed sample signer SHA-256 matches the expected approved signer.\nNext: Keep the approved APK and signer digest with this report.\n\nRecovery update visibility\nNEEDS REVIEW\n\nA/B update support is visible, but Android cannot safely prove recovery sideload status while running.\nNext: Read your device’s approved recovery instructions before using recovery.\n\nRecovery checklist\nKeep the approved APK and its known-good version.\nRecord the app package and signer before an update.\nStop after an error and save the report before retrying.\nInstall the command-line tool\n$ sideload-readiness demo --output readiness.md\nWrote readiness.md\n\n$ sideload-readiness check --package com.example.approved\n  --expected-signer 9A:25:70:…\n83% — Signer matched. Review recovery before updating.\n\nThe command asks adb for status. It does not install apps, unlock devices, or change Android settings.\n\nThe macOS package and Windows app are unsigned. Verify the matching Sigstore bundle before installation.\n\nOpen release downloads\nLinux and macOS installer\nPowerShell installer\n\nChecking published downloads.\n\nHow the readiness check works\n01\nConnect one Android device\n\nAccept Android’s USB debugging prompt. Choose a device when adb lists more than one.\n\n02\nCheck device and app readiness\n\nCompare the installed signer SHA-256 with the approved APK. Read storage, USB state, and recovery clues.\n\n03\nFollow the report’s next step\n\nSave a redacted report. Follow its next step or stop before an update.\n\nWhat this tool does and does not do\nWhat the CLI checks\n\nMake a device-specific report from read-only adb queries. It explains what to check next.\n\nWhat the CLI never does\n\nIt never bypasses Android controls, unlocks bootloaders, or distributes APKs.\n\nSMALL IT TEAMS\n\nFleet report review\n\nFleet review is a $39 one-time license. It adds a local report queue and package-status table. Single-device checks stay free.\n\n$39 one-time purchase\n\nBuy fleet review\n\nHave a license? Paste it here.\nVerify fleet license\n\nVerification happens with Sociobot when you choose this button.\n\nRead-only Android update checks for cautious maintainers.\n\nPrivacy\nTerms\nBuilt by Param Factory\nv0.1.4",
+      "scrollY": 0,
+      "action": {
+        "x": 104,
+        "y": 602.875,
+        "width": 256.65625,
+        "height": 49.828125
+      },
+      "outcome": {
+        "x": 375.65625,
+        "y": 605.421875,
+        "width": 304,
+        "height": 44.71875
+      },
+      "facts": [
+        {
+          "text": "Read-only adb checks",
+          "box": {
+            "x": 104,
+            "y": 688.703125,
+            "width": 628.40625,
+            "height": 16
+          }
+        },
+        {
+          "text": "Device IDs are redacted",
+          "box": {
+            "x": 104,
+            "y": 712.703125,
+            "width": 628.40625,
+            "height": 16
+          }
+        },
+        {
+          "text": "Free for one device",
+          "box": {
+            "x": 104,
+            "y": 736.703125,
+            "width": 628.40625,
+            "height": 16
+          }
+        }
+      ],
+      "consoleErrors": [],
+      "localStorage": {},
+      "cookies": []
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "before": {
+    "url": "https://sideload-readiness.sociobot.in/",
+    "storage": {
+      "real:sentinel": "must-survive"
+    }
+  },
+  "afterEntry": {
+    "url": "https://sideload-readiness.sociobot.in/?demo=1",
+    "title": "Demo — Sideload Readiness",
+    "h1": "Find the next safe step",
+    "banner": "Demo — sample data, nothing is saved.\nReset demo\nStart for real",
+    "storage": {
+      "demo:sideload-readiness": "{\"score\":83,\"device\":{\"id\":\"device-6f31a0b2\",\"android\":\"15 (sample)\",\"usb\":\"mtp,adb\"},\"findings\":[[\"Authorized USB debugging\",\"ready\",\"One authorized sample device is visible to adb.\",\"Keep the authorization prompt accepted while checking.\"],[\"Developer options\",\"ready\",\"Developer options are enabled.\",\"Leave this unchanged for approved maintenance.\"],[\"USB data mode\",\"ready\",\"The sample device exposes adb over USB.\",\"Use a data-capable cable if this changes.\"],[\"Free data storage\",\"ready\",\"2.8 GiB free on /data. The 1 GiB safety floor is met.\",\"Keep the floor before copying an update.\"],[\"Package signer match\",\"ready\",\"The installed sample signer SHA-256 matches the expected approved signer.\",\"Keep the approved APK and signer digest with this report.\"],[\"Recovery update visibility\",\"needs-review\",\"A/B update support is visible, but Android cannot safely prove recovery sideload status while running.\",\"Read your device’s approved recovery instructions before using recovery.\"]]}",
+      "real:sentinel": "must-survive"
+    },
+    "deviceCalls": {
+      "usb": 0,
+      "serial": 0
+    },
+    "scrollY": 0,
+    "firstFinding": true,
+    "reportText": "DEMO / SAMPLE DEVICE\n\nFind the next safe step\n\nThis sample shows a recovery check that needs review before an approved update.\n\nREADINESS REPORT / SAMPLE\ndevice-6f31a0b2 · Android 15 (sample)\n83% · Fix one item before recovery\nAuthorized USB debugging\nREADY\n\nOne authorized sample device is visible to adb.\nNext: Keep the authorization prompt accepted while checking.\n\nDeveloper options\nREADY\n\nDeveloper options are enabled.\nNext: Leave this unchanged for approved maintenance.\n\nUSB data mode\nREADY\n\nThe sample device exposes adb over USB.\nNext: Use a data-capable cable if this changes.\n\nFree data storage\nREADY\n\n2.8 GiB free on /data. The 1 GiB safety floor is met.\nNext: Keep the floor before copying an update.\n\nPackage signer match\nREADY\n\nThe installed sample signer SHA-256 matches the expected approved signer.\nNext: Keep the approved APK and signer digest with this report.\n\nRecovery update visibility\nNEEDS REVIEW\n\nA/B update support is visible, but Android cannot safely prove recovery sideload status while running.\nNext: Read your device’s approved recovery instructions before using recovery.\n\nRecovery checklist\nKeep the approved APK and its known-good version.\nRecord the app package and signer before an update.\nStop after an error and save the report before retrying.\nRun this on your device\n\nInstall the command, connect one authorized device, then run sideload-readiness check. The demo never reads a device.\n\nSee install options"
+  },
+  "resetChanged": false,
+  "afterReset": {
+    "url": "https://sideload-readiness.sociobot.in/?demo=1",
+    "storage": {
+      "demo:sideload-readiness": "{\"score\":83,\"device\":{\"id\":\"device-6f31a0b2\",\"android\":\"15 (sample)\",\"usb\":\"mtp,adb\"},\"findings\":[[\"Authorized USB debugging\",\"ready\",\"One authorized sample device is visible to adb.\",\"Keep the authorization prompt accepted while checking.\"],[\"Developer options\",\"ready\",\"Developer options are enabled.\",\"Leave this unchanged for approved maintenance.\"],[\"USB data mode\",\"ready\",\"The sample device exposes adb over USB.\",\"Use a data-capable cable if this changes.\"],[\"Free data storage\",\"ready\",\"2.8 GiB free on /data. The 1 GiB safety floor is met.\",\"Keep the floor before copying an update.\"],[\"Package signer match\",\"ready\",\"The installed sample signer SHA-256 matches the expected approved signer.\",\"Keep the approved APK and signer digest with this report.\"],[\"Recovery update visibility\",\"needs-review\",\"A/B update support is visible, but Android cannot safely prove recovery sideload status while running.\",\"Read your device’s approved recovery instructions before using recovery.\"]]}",
+      "real:sentinel": "must-survive"
+    },
+    "deviceCalls": {
+      "usb": 0,
+      "serial": 0
+    },
+    "banner": "Demo — sample data, nothing is saved.\nReset demo\nStart for real"
+  },
+  "offline": {
+    "url": "https://sideload-readiness.sociobot.in/?demo=1",
+    "h1": "Find the next safe step",
+    "bannerVisible": true,
+    "storage": {
+      "demo:sideload-readiness": "{\"score\":83,\"device\":{\"id\":\"device-6f31a0b2\",\"android\":\"15 (sample)\",\"usb\":\"mtp,adb\"},\"findings\":[[\"Authorized USB debugging\",\"ready\",\"One authorized sample device is visible to adb.\",\"Keep the authorization prompt accepted while checking.\"],[\"Developer options\",\"ready\",\"Developer options are enabled.\",\"Leave this unchanged for approved maintenance.\"],[\"USB data mode\",\"ready\",\"The sample device exposes adb over USB.\",\"Use a data-capable cable if this changes.\"],[\"Free data storage\",\"ready\",\"2.8 GiB free on /data. The 1 GiB safety floor is met.\",\"Keep the floor before copying an update.\"],[\"Package signer match\",\"ready\",\"The installed sample signer SHA-256 matches the expected approved signer.\",\"Keep the approved APK and signer digest with this report.\"],[\"Recovery update visibility\",\"needs-review\",\"A/B update support is visible, but Android cannot safely prove recovery sideload status while running.\",\"Read your device’s approved recovery instructions before using recovery.\"]]}",
+      "real:sentinel": "must-survive"
+    }
+  },
+  "afterExit": {
+    "url": "https://sideload-readiness.sociobot.in/",
+    "h1": "Check Android update safety",
+    "storage": {
+      "real:sentinel": "must-survive"
+    },
+    "deviceCalls": {
+      "usb": 0,
+      "serial": 0
+    }
+  },
+  "requests": [
+    "https://sideload-readiness.sociobot.in/",
+    "https://sideload-readiness.sociobot.in/assets/style.153fe0711a98.css",
+    "https://sideload-readiness.sociobot.in/assets/app.60cf922cde66.js",
+    "https://sideload-readiness.sociobot.in/public/hero-concrete-moss-768.webp",
+    "https://sideload-readiness.sociobot.in/?demo=1",
+    "https://sideload-readiness.sociobot.in/assets/style.153fe0711a98.css",
+    "https://sideload-readiness.sociobot.in/assets/app.60cf922cde66.js",
+    "https://sideload-readiness.sociobot.in/?demo=1",
+    "https://sideload-readiness.sociobot.in/assets/style.153fe0711a98.css",
+    "https://sideload-readiness.sociobot.in/assets/app.60cf922cde66.js",
+    "https://sideload-readiness.sociobot.in/public/hero-concrete-moss-768.webp"
+  ],
+  "requestOrigins": [
+    "https://sideload-readiness.sociobot.in"
+  ],
+  "consoleErrors": []
+}
