@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Captured from the rendered `/` route for perfection-loop round 3. Headings, actions, status
+Rechecked from the rendered `/` route for perfection-loop round 5. Headings, actions, status
 labels, report text, and prose are included. No line exceeds 22 words. The
 literal safety statements about not unlocking devices are the allowed literal
 use of “unlock.” No other banned word appears.
