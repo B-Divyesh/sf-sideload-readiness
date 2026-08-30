@@ -1,3 +1,35 @@
+# Review 5 handoff — Sideload Readiness
+
+## Status: FAIL
+
+This review made no product-code changes. It added
+.factory/review-5.md, which records one blocking finding: header links such as
+Demo and Privacy bypass the focused History API route path. Using Back after
+those links leaves focus on BODY rather than the destination h1. Route all
+same-origin global links through the existing route handler and add header
+Back/Forward focus tests.
+
+Verification from a fresh clone at f4e17396ade8706ad016b87ffafcd4c9d8f30593:
+
+- all 32 exact claim commands passed;
+- npm test passed (27 Node and 72 Playwright tests);
+- npm run build produced dist/site;
+- live byte identity, metadata, demo isolation, offline reload, privacy,
+  mobile layout, console, and Axe checks passed;
+- the direct CLI demo created a private mode-0600 JSON report with six findings
+  and no adb connection.
+
+Recheck with:
+
+```sh
+npm ci
+npm test
+npm run build
+node scripts/verify-live.mjs https://sideload-readiness.sociobot.in
+```
+
+The historical handoff follows.
+
 # Verification 12 handoff — Sideload Readiness
 
 ## Current independent verdict: PASS
