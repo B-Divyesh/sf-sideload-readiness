@@ -320,6 +320,13 @@ test('@claim:fleet-review a cached valid license enables the local report queue'
   await expect(page.getByRole('cell', { name: 'device-1234abcd' })).toBeVisible();
 });
 
+test('a free single-device visitor cannot open paid fleet tools', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#fleet-tools')).toHaveCount(0);
+  await expect(page.getByLabel('Add redacted JSON reports')).toHaveCount(0);
+  await expect(page.getByText('Single-device checks stay free.')).toBeVisible();
+});
+
 test('fleet imports reject forged and invalid reports with an announced recovery step', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('sb_license:sideload-readiness', 'fixture-license');

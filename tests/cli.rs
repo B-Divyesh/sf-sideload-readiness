@@ -109,13 +109,33 @@ fn claim_demo_json_is_machine_readable() {
     fs::remove_file(output).expect("temporary report is removable");
 }
 
+#[cfg(unix)]
 #[test]
 // @claim:single-device-free
 fn claim_single_device_check_is_free() {
-    let (output, parsed) = run_demo_json("claim-free-device");
-    assert_eq!(parsed["mode"], "demo");
-    assert_eq!(parsed["findings"].as_array().unwrap().len(), 6);
-    fs::remove_file(output).expect("temporary report is removable");
+    let (adb_path, log_path, report) = run_mock_device_with_args(
+        "claim-free-single-device",
+        &["--expected-signer", SIGNER_SHA256],
+    );
+    assert_eq!(
+        report["mode"], "live",
+        "the public check path, not demo, ran"
+    );
+    assert_eq!(report["schema"], "sideload-readiness/v1");
+    assert!(report["device"]["id"]
+        .as_str()
+        .is_some_and(|id| id.starts_with("device-")));
+    assert_eq!(report["findings"].as_array().unwrap().len(), 6);
+    assert!(report["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|finding| finding["id"] == "connection" && finding["status"] == "ready"));
+    assert!(fs::read_to_string(&log_path)
+        .expect("the fake authorized device was queried")
+        .contains("devices"));
+    fs::remove_file(adb_path).expect("mock adb can be removed");
+    fs::remove_file(log_path).expect("mock log can be removed");
 }
 
 #[test]
@@ -247,6 +267,8 @@ fn run_mock_device_case_with_storage(
     let log_path = temporary_path(label, "log");
     let apk_path = temporary_path(label, "apk");
     let output_path = temporary_path(label, "json");
+    let isolated_home = temporary_path(label, "home");
+    fs::create_dir(&isolated_home).expect("isolated account state is created");
     let fixture = include_str!("fixtures/aosp-v2-signed.apk.b64");
     fs::write(
         &apk_path,
@@ -291,6 +313,13 @@ esac
         .arg(&output_path)
         .env("SIDELOAD_TEST_ADB_LOG", &log_path)
         .env("SIDELOAD_TEST_APK", &apk_path)
+        .env("HOME", &isolated_home)
+        .env("XDG_CONFIG_HOME", isolated_home.join("config"))
+        .env("XDG_DATA_HOME", isolated_home.join("data"))
+        .env_remove("SB_LICENSE")
+        .env_remove("SB_LICENSE_SIDELOAD_READINESS")
+        .env_remove("SIDELOAD_READINESS_LICENSE")
+        .env_remove("SIDELOAD_READINESS_LICENSE_TOKEN")
         .env(
             "SIDELOAD_TEST_DUMPSYS",
             concat!(
@@ -309,6 +338,14 @@ esac
     let parsed = serde_json::from_str(&report).expect("live report is JSON");
     fs::remove_file(&output_path).expect("output can be removed");
     fs::remove_file(&apk_path).expect("APK fixture can be removed");
+    assert!(
+        fs::read_dir(&isolated_home)
+            .expect("isolated account state stays readable")
+            .next()
+            .is_none(),
+        "the check must not create account, cached-license, or fleet state"
+    );
+    fs::remove_dir(&isolated_home).expect("isolated account state can be removed");
     (adb_path, log_path, parsed)
 }
 
