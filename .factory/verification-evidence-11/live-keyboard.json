@@ -1,0 +1,84 @@
+{
+  "errors": [],
+  "tabs": [
+    {
+      "name": "Skip to report",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "SR / 01",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "Demo",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "Install",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "Fleet",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "Privacy",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "Try it with sample data",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "rgb(23, 32, 24) 4px 4px 0px 0px"
+    },
+    {
+      "name": "Open release downloads",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "rgb(23, 32, 24) 4px 4px 0px 0px"
+    },
+    {
+      "name": "Linux and macOS installer",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "PowerShell installer",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    },
+    {
+      "name": "Buy fleet review",
+      "tag": "A",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "rgb(23, 32, 24) 4px 4px 0px 0px"
+    },
+    {
+      "name": "",
+      "tag": "INPUT",
+      "outline": "3px solid rgb(11, 90, 162)",
+      "shadow": "none"
+    }
+  ],
+  "demoUrl": "https://sideload-readiness.sociobot.in/?demo=1",
+  "demoH1Focused": true,
+  "demoBanner": true,
+  "resetH1Focused": true,
+  "demoKeys": [
+    "demo:sideload-readiness"
+  ]
+}

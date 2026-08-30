@@ -1,79 +1,78 @@
-# Review 4 handoff — Sideload Readiness
+# Verification 11 handoff — Sideload Readiness
 
-## Status: PASS
+## Status: FAIL
 
-Perfection-loop round 4 repaired the only outstanding finding in adversarial
-review 4. The code repair is commit
-`2880abd13249ecb5a7b84e395c7aeadf21a64000` (`fix: prove free real-device
-checks`) and is pushed to `main`. Static deployment
-`046de563-020a-4a4a-9784-cc561c5a9bb7` completed successfully. The deployed
-site was reopened cold at <https://sideload-readiness.sociobot.in> and byte
-matched the local production build.
+Independent QA tested candidate
+`d58430814d88ccb3fa66f90de6ced7dd05c71fe6` and the live deployment at
+<https://sideload-readiness.sociobot.in> on 2026-08-30 UTC. The live site
+byte-matches the candidate build, so the earlier deployment-only failure was
+not reproduced. No product code was changed during verification.
 
-The repair changes the `single-device-free` proof from `demo` to the public
-`check` command against one authorized fake adb device. It uses a fresh empty
-HOME/XDG namespace, removes license environment variables, asserts a live
-redacted six-finding report, and checks that no account, cached-license, or
-fleet state was created. A paired browser test proves the Fleet import controls
-stay unavailable to a visitor without a license. The catalog description is
-now verb-first and 69 characters long.
+The release is blocked by two high-severity contract defects:
 
-## How to run and verify
+1. The live Privacy page says the CLI writes a report only when the user asks
+   for an output file. The public `sideload-readiness demo` command instead
+   creates and retains a temporary report without `--output`. This is a false,
+   unlisted claim and contradicts two declared demo-file claims.
+2. README says both one-line installers place the binary on `PATH`, but the
+   shell and PowerShell scripts only copy it to a directory and may tell the
+   user to add that directory to `PATH`. The successful installer smoke jobs
+   invoke full paths and do not prove the advertised one-step result.
+
+One medium defect also remains: `install.sh` accepts Linux `arm64|aarch64` and
+requests `sideload-readiness-linux-aarch64.tar.gz`, but release v0.1.4 does not
+publish that asset; the current public URL returns 404.
+
+Full findings, evidence, and exact results are in
+`.factory/verification-11.md`. Evidence is under
+`.factory/verification-evidence-11/`.
+
+## Verification summary
+
+- All 29 exact commands in `.factory/claims.json`: passed.
+- First-read desktop and 390 px gate: passed; one-click sample is above the
+  fold and explains its result.
+- `npm ci`: passed, 0 vulnerabilities.
+- `npm test`: 24 Node tests and 71 Playwright tests passed; one intentional
+  project skip.
+- `npm run build`: passed and produced `dist/site`.
+- `cargo fmt --check`: passed.
+- `cargo clippy --all-targets --all-features -- -D warnings`: passed.
+- `cargo test --all-targets`: 21 passed.
+- `cargo build --release --locked`: passed.
+- `cargo package --locked`: passed and verified.
+- Packaged-crate clean consumer install and CLI exercise: passed.
+- Public v0.1.4 Linux checksum, extraction, version, and demo: passed.
+- Live byte identity, routes, designed 404, keyboard, focus, reduced motion,
+  200% text, 390 px layout, links, headers, request privacy, demo isolation,
+  license error recovery, service-worker update, and offline reload: passed.
+- Axe: zero serious/critical findings on all tested routes.
+- Mobile Lighthouse: 98 performance, 100 accessibility, 100 best practices,
+  100 SEO; LCP 1.343 s, TBT 155.5 ms, CLS 0.
+- License verifier rate limit: a 40-request burst produced 30 × 200 and 10 ×
+  429; all 429 responses included `Retry-After: 4`.
+
+## Required fixes before release
+
+1. Correct `/privacy` so it accurately explains automatic demo-file creation,
+   and add or adjust the matching tagged claim test.
+2. Make each advertised one-line installer leave `sideload-readiness`
+   directly runnable, or correct the README and installer contract with a
+   clear, tested follow-up command.
+3. Publish a Linux ARM64 release asset or reject ARM64 before attempting a
+   nonexistent download.
+
+## Re-run
 
 ```sh
-cargo test --all-targets
+# Run every command in .factory/claims.json independently first.
 npm ci
 npm test
 npm run build
 cargo fmt --check
 cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all-targets
+cargo build --release --locked
 cargo package --locked
+node scripts/verify-live.mjs https://sideload-readiness.sociobot.in
 ```
-
-The browser sample is <https://sideload-readiness.sociobot.in/?demo=1>. It is
-isolated in `demo:sideload-readiness`; Reset demo recreates only that key and
-Start for real discards it. The CLI sample is `sideload-readiness demo`.
-
-## Exact verification evidence
-
-- No-hardlink clean clone: `/tmp/sideload-readiness-polish4-claims.hDxETO/repo`
-  at `2880abd13249ecb5a7b84e395c7aeadf21a64000`.
-- Every exact command from `.factory/claims.json` passed separately: 29/29,
-  ending with `ALL_CLAIMS_PASSED 29`.
-- Full clean-clone suite passed: `cargo fmt --check`; Clippy with warnings
-  denied; 17 CLI tests plus 4 Rust unit tests; `npm test` with 24 Node tests
-  and 71 Playwright passes plus one intentional mobile-project skip;
-  `npm run build`; and `cargo package --locked`.
-- `node scripts/verify-live.mjs https://sideload-readiness.sociobot.in` passed
-  byte identity, route metadata, designed 404, first-screen mobile layout,
-  demo isolation, offline reload, same-origin requests, zero device API calls,
-  zero console errors, and zero serious/critical Axe findings. Report:
-  `.factory/polish-evidence-4/live-verification.json`.
-- `/opt/fleet/lib/verify-url.sh` passed on home, demo, privacy, and terms.
-  Captures and basic accessibility reports are under
-  `.factory/polish-evidence-4/verify-url/` and
-  `.factory/polish-evidence-4/live-{demo,privacy,terms}/`.
-- Mobile Lighthouse at
-  `.factory/polish-evidence-4/lighthouse-live.json`: performance 100,
-  accessibility 100, best practices 100, SEO 100; LCP 1,244 ms, CLS 0,
-  TBT 26 ms.
-- Production bundle sizes: JavaScript 21,726 bytes raw / 7,393 bytes gzip;
-  CSS 8,278 bytes raw / 2,727 bytes gzip.
-
-## Deployment
-
-The factory deployment command is:
-
-```sh
-npm ci && npm run build:site
-/opt/fleet/lib/deploy-static.sh sideload-readiness dist/site
-```
-
-It deploys `dist/site`; this repository does not manage DNS, cloud
-infrastructure, payments, or release publication credentials.
-
-## Known gaps and next steps
-
-None. All findings from reviews 1 through 4 were rechecked in the clean clone
-and on the live site. The existing release workflow remains responsible for
-tagged CLI release artifacts.

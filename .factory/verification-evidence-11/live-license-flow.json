@@ -1,0 +1,23 @@
+{
+  "statusText": "That license is not active. You can buy a new fleet review license.",
+  "fleetTools": 0,
+  "externalResponses": [
+    {
+      "url": "https://api.sociobot.in/api/v1/products/sideload-readiness/verify?license=qa-invalid-live",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "https://sideload-readiness.sociobot.in",
+        "cache-control": "no-store",
+        "content-length": "52",
+        "date": "Sun, 30 Aug 2026 01:12:39 GMT",
+        "content-type": "application/json",
+        "vary": "origin, access-control-request-method, access-control-request-headers",
+        "access-control-allow-credentials": "true"
+      }
+    }
+  ],
+  "storage": {
+    "sb_license_verdict:sideload-readiness": "{\"valid\":false,\"reason\":\"invalid\",\"checked_at\":1788052359013}",
+    "sb_license:sideload-readiness": "qa-invalid-live"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "first": {
+    "h1": "Check Android update safety",
+    "audience": "For people who maintain approved sideloaded apps when device rules or recovery paths change.",
+    "action": {
+      "x": 16,
+      "y": 442.3125,
+      "width": 243.671875,
+      "height": 48.3125
+    },
+    "outcome": {
+      "x": 16,
+      "y": 505.625,
+      "width": 336.171875,
+      "height": 22.359375
+    }
+  },
+  "errors": [],
+  "overflow": {
+    "scrollWidth": 390,
+    "clientWidth": 390
+  },
+  "undersized": [],
+  "demoBanner": true
+}

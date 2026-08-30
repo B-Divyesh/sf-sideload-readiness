@@ -1,0 +1,50 @@
+{
+  "banner": true,
+  "keysBeforeExit": [
+    "demo:sideload-readiness",
+    "real:sentinel"
+  ],
+  "keysAfterExit": {
+    "real:sentinel": "preserve"
+  },
+  "requestCount": 7,
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://sideload-readiness.sociobot.in/?demo=1",
+      "type": "document"
+    },
+    {
+      "method": "GET",
+      "url": "https://sideload-readiness.sociobot.in/assets/style.153fe0711a98.css",
+      "type": "stylesheet"
+    },
+    {
+      "method": "GET",
+      "url": "https://sideload-readiness.sociobot.in/assets/app.ad925ab2e3e9.js",
+      "type": "script"
+    },
+    {
+      "method": "GET",
+      "url": "https://sideload-readiness.sociobot.in/?demo=1",
+      "type": "document"
+    },
+    {
+      "method": "GET",
+      "url": "https://sideload-readiness.sociobot.in/assets/style.153fe0711a98.css",
+      "type": "stylesheet"
+    },
+    {
+      "method": "GET",
+      "url": "https://sideload-readiness.sociobot.in/assets/app.ad925ab2e3e9.js",
+      "type": "script"
+    },
+    {
+      "method": "GET",
+      "url": "https://sideload-readiness.sociobot.in/public/hero-concrete-moss-768.webp",
+      "type": "image"
+    }
+  ],
+  "externalRequests": [],
+  "errors": []
+}

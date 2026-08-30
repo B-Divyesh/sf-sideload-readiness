@@ -1,0 +1,90 @@
+{
+  "/": {
+    "status": 200,
+    "bytes": 2333,
+    "cacheControl": "public, must-revalidate, max-age=30",
+    "contentType": "text/html",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  },
+  "/demo": {
+    "status": 200,
+    "bytes": 2333,
+    "cacheControl": "public, must-revalidate, max-age=30",
+    "contentType": "text/html",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  },
+  "/privacy": {
+    "status": 200,
+    "bytes": 2333,
+    "cacheControl": "public, must-revalidate, max-age=30",
+    "contentType": "text/html",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  },
+  "/terms": {
+    "status": 200,
+    "bytes": 2333,
+    "cacheControl": "public, must-revalidate, max-age=30",
+    "contentType": "text/html",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  },
+  "/service-worker.js": {
+    "status": 200,
+    "bytes": 1076,
+    "cacheControl": "no-cache",
+    "contentType": "text/javascript",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  },
+  "/assets/app.ad925ab2e3e9.js": {
+    "status": 200,
+    "bytes": 21726,
+    "cacheControl": "public, max-age=31536000, immutable",
+    "contentType": "text/javascript",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  },
+  "/assets/style.153fe0711a98.css": {
+    "status": 200,
+    "bytes": 8278,
+    "cacheControl": "public, max-age=31536000, immutable",
+    "contentType": "text/css",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  },
+  "/public/hero-concrete-moss-768.webp": {
+    "status": 200,
+    "bytes": 69354,
+    "cacheControl": "public, must-revalidate, max-age=30",
+    "contentType": "image/webp",
+    "csp": "default-src 'self'; connect-src 'self' https://api.github.com https://api.sociobot.in; img-src 'self'; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    "permissionsPolicy": "camera=(), microphone=(), geolocation=(), usb=(), serial=()",
+    "hsts": "max-age=10886400; includeSubDomains; preload",
+    "nosniff": "nosniff",
+    "referrerPolicy": "strict-origin-when-cross-origin"
+  }
+}

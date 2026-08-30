@@ -1,0 +1,17 @@
+{
+  "before": [
+    "sideload-readiness-v4-6e0dc2c30891"
+  ],
+  "update": {
+    "active": "https://sideload-readiness.sociobot.in/service-worker.js",
+    "waiting": null,
+    "installing": null
+  },
+  "afterUpdate": [
+    "sideload-readiness-v4-6e0dc2c30891"
+  ],
+  "offlineUrl": "https://sideload-readiness.sociobot.in/demo",
+  "offlineH1": "Find the next safe step",
+  "sampleVisible": true,
+  "errors": []
+}

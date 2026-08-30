@@ -1,0 +1,16 @@
+{
+  "finding": {
+    "animationName": "none",
+    "animationDuration": "1e-05s",
+    "transitionDuration": "1e-05s"
+  },
+  "zoom": {
+    "scrollWidth": 390,
+    "clientWidth": 390
+  },
+  "visible": {
+    "h1": true,
+    "reset": true,
+    "start": true
+  }
+}

@@ -1,0 +1,98 @@
+[
+  {
+    "text": "Skip to report",
+    "url": "https://sideload-readiness.sociobot.in/#main",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/#main"
+  },
+  {
+    "text": "SR / 01",
+    "url": "https://sideload-readiness.sociobot.in/",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/"
+  },
+  {
+    "text": "Demo",
+    "url": "https://sideload-readiness.sociobot.in/demo",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/demo"
+  },
+  {
+    "text": "Install",
+    "url": "https://sideload-readiness.sociobot.in/#install",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/#install"
+  },
+  {
+    "text": "Fleet",
+    "url": "https://sideload-readiness.sociobot.in/#fleet",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/#fleet"
+  },
+  {
+    "text": "Privacy",
+    "url": "https://sideload-readiness.sociobot.in/privacy",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/privacy"
+  },
+  {
+    "text": "Try it with sample data",
+    "url": "https://sideload-readiness.sociobot.in/?demo=1",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/?demo=1"
+  },
+  {
+    "text": "Open release downloads",
+    "url": "https://github.com/B-Divyesh/sf-sideload-readiness/releases",
+    "status": 200,
+    "finalUrl": "https://github.com/B-Divyesh/sf-sideload-readiness/releases"
+  },
+  {
+    "text": "Linux and macOS installer",
+    "url": "https://sideload-readiness.sociobot.in/install.sh",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/install.sh"
+  },
+  {
+    "text": "PowerShell installer",
+    "url": "https://sideload-readiness.sociobot.in/install.ps1",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/install.ps1"
+  },
+  {
+    "text": "Buy fleet review",
+    "url": "https://api.sociobot.in/api/v1/products/sideload-readiness/checkout",
+    "status": 303,
+    "location": "https://checkout.dodopayments.com/session/cks_0NmTsqxSGavgjT5VFS758"
+  },
+  {
+    "text": "Terms",
+    "url": "https://sideload-readiness.sociobot.in/terms",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/terms"
+  },
+  {
+    "text": "Built by Param Factory",
+    "url": "https://sociobot.in/",
+    "status": 200,
+    "finalUrl": "https://sociobot.in/"
+  },
+  {
+    "text": "Skip to report",
+    "url": "https://sideload-readiness.sociobot.in/demo#main",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/demo#main"
+  },
+  {
+    "text": "Skip to report",
+    "url": "https://sideload-readiness.sociobot.in/privacy#main",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/privacy#main"
+  },
+  {
+    "text": "Skip to report",
+    "url": "https://sideload-readiness.sociobot.in/terms#main",
+    "status": 200,
+    "finalUrl": "https://sideload-readiness.sociobot.in/terms#main"
+  }
+]
