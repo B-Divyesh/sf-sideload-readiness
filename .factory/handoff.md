@@ -1,4 +1,22 @@
-# Repair 8 handoff — Sideload Readiness
+# Verification 12 handoff — Sideload Readiness
+
+## Current independent verdict: PASS
+
+Candidate `cf2989e6f4cc26034017d38c808c7fce0f54ed0e` was independently verified
+against <https://sideload-readiness.sociobot.in> on 2026-08-30 UTC. All 32
+declared claim commands passed first from a clean checkout; `npm test`, the
+production build, Rust format/lint/test/release/package checks, a clean packaged
+CLI consumer, live deployed installer, browser privacy/accessibility/mobile/PWA
+checks, and rate-limit verification passed. The live JS, CSS, and service-worker
+hashes exactly match this candidate build. The observed Sociobot verification
+allowance was 30 successful burst requests; request 31 received `429` with
+`Retry-After: 2`. There are no known defects or release blockers.
+
+See [verification-12.md](verification-12.md) for the exact commands, evidence,
+first-read result, asset hashes, and defect list. The remaining historical
+handoff below documents the preceding repair and does not supersede this verdict.
+
+# Repair 8 handoff — historical context
 
 ## Status: PASS
 
