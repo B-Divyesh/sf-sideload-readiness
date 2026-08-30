@@ -104,6 +104,16 @@ test('site source declares no third-party runtime code', async () => {
   assert.match(html, /<html lang="en"/);
 });
 
+test('static and generated external links disclose their destination', async () => {
+  const [app, html, notFound] = await Promise.all([get('app.js'), get('index.html'), get('404.html')]);
+  assert.match(app, /Open releases on GitHub \(external\)/);
+  assert.match(app, /Buy fleet review through Sociobot \(external checkout\)/);
+  assert.match(app, /Mac \(\.pkg\) on GitHub \(external\)/);
+  assert.match(app, /Download \$\{asset\.name\} from GitHub \(external\)/);
+  assert.match(html, /Param Factory on Sociobot \(external\)/);
+  assert.match(notFound, /Param Factory on Sociobot \(external\)/);
+});
+
 test('site has required routes and metadata', async () => {
   const html = await get('index.html');
   const config = JSON.parse(await get('staticwebapp.config.json'));

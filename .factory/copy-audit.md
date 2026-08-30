@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Rechecked from the rendered `/` route for perfection-loop round 5. Headings, actions, status
+Rechecked from the rendered `/` route for perfection-loop round 6. Headings, actions, status
 labels, report text, and prose are included. No line exceeds 22 words. The
 literal safety statements about not unlocking devices are the allowed literal
 use of “unlock.” No other banned word appears.
@@ -48,14 +48,16 @@ use of “unlock.” No other banned word appears.
 | It does not install apps, unlock devices, or change Android settings. | 11 | literal “unlock” |
 | The macOS package and Windows app are unsigned. | 8 | listed claim |
 | Verify the matching Sigstore bundle before installation. | 7 | listed claim |
-| Open release downloads | 3 | — |
+| Open releases on GitHub (external) | 5 | external destination named |
 | Linux and macOS installer | 4 | — |
 | PowerShell installer | 2 | — |
 | Checking published downloads. | 3 | — |
 | Opening the checksummed download. | 4 | — |
 | Choose your Mac type | 5 | — |
-| Apple silicon Mac (.pkg) | 4 | — |
-| Intel Mac (.pkg) | 3 | — |
+| Choose Mac download on GitHub (external) | 6 | external destination named |
+| Apple silicon Mac (.pkg) on GitHub (external) | 7 | external destination named |
+| Intel Mac (.pkg) on GitHub (external) | 6 | external destination named |
+| Download [release filename] from GitHub (external) | 6 | external destination named |
 | Choose Apple silicon or Intel before downloading. | 7 | — |
 | This browser does not identify a supported desktop system. | 10 | — |
 | Open releases to choose a file. | 6 | — |
@@ -83,11 +85,13 @@ use of “unlock.” No other banned word appears.
 | It adds a local report queue and package-status table. | 9 | — |
 | Single-device checks stay free. | 4 | — |
 | $39 one-time purchase | 3 | — |
-| Buy fleet review | 3 | — |
+| Buy fleet review through Sociobot (external checkout) | 7 | external destination named |
 | Have a license? | 4 | — |
 | Paste it here. | 3 | — |
 | Verify fleet license | 3 | — |
 | Verification happens with Sociobot when you choose this button. | 9 | — |
+| Read-only Android update checks for cautious maintainers. | 7 | — |
+| Param Factory on Sociobot (external) | 5 | external destination named |
 
 ## README audit
 

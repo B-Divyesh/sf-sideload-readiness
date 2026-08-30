@@ -29,6 +29,16 @@ async function undersizedTargets(page) {
     .map(item => ({ label: item.label, width: item.rect.width, height: item.rect.height })));
 }
 
+async function undisclosedExternalLinks(page) {
+  return page.locator('a[href]').evaluateAll(links => links
+    .map(link => ({
+      href: link.href,
+      name: (link.getAttribute('aria-label') || link.textContent || '').trim()
+    }))
+    .filter(link => /^https?:/.test(link.href) && new URL(link.href).origin !== location.origin)
+    .filter(link => !/\bexternal\b/i.test(link.name)));
+}
+
 test('landing page has one clear primary route and no console errors', async ({ page }) => {
   const errors = [];
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
@@ -43,6 +53,20 @@ test('landing page has one clear primary route and no console errors', async ({ 
   await expect(page.getByRole('heading', { level: 3, name: 'Check device and app readiness' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 3, name: 'Follow the report’s next step' })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('every off-origin link names itself as external in every rendered state', async ({ page }) => {
+  for (const path of ['/', '/demo', '/privacy', '/terms', '/unambiguously-missing-external-link-route']) {
+    await page.goto(path);
+    expect(await undisclosedExternalLinks(page)).toEqual([]);
+  }
+
+  await useUserAgent(page, 'Mozilla/5.0 (Macintosh; Apple Silicon Mac OS X 14_6) AppleWebKit/605.1.15 Version/18.6 Safari/605.1.15');
+  await mockRelease(page);
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Open releases on GitHub (external)' }).click();
+  await expect(page.locator('#download-choices')).toBeVisible();
+  expect(await undisclosedExternalLinks(page)).toEqual([]);
 });
 
 test('390px first viewport contains the complete sample action and outcome', async ({ page }) => {
@@ -109,7 +133,7 @@ for (const { label, userAgent, expectedAsset } of [
     await useUserAgent(page, userAgent);
     await mockRelease(page);
     await page.goto('/');
-    await page.getByRole('link', { name: 'Open release downloads' }).click();
+    await page.getByRole('link', { name: 'Open releases on GitHub (external)' }).click();
     await expect(page).toHaveURL(`${releaseRoot}/${expectedAsset}`);
   });
 }
@@ -118,13 +142,13 @@ for (const { label, userAgent, expectedChoice, expectedAsset } of [
   {
     label: 'Intel Mac',
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140.0 Safari/537.36',
-    expectedChoice: 'Intel Mac (.pkg)',
+    expectedChoice: 'Intel Mac (.pkg) on GitHub (external)',
     expectedAsset: 'sideload-readiness-macos-x86_64.pkg'
   },
   {
     label: 'Apple silicon Mac',
     userAgent: 'Mozilla/5.0 (Macintosh; Apple Silicon Mac OS X 14_6) AppleWebKit/605.1.15 Version/18.6 Safari/605.1.15',
-    expectedChoice: 'Apple silicon Mac (.pkg)',
+    expectedChoice: 'Apple silicon Mac (.pkg) on GitHub (external)',
     expectedAsset: 'sideload-readiness-macos-aarch64.pkg'
   }
 ]) {
@@ -132,11 +156,11 @@ for (const { label, userAgent, expectedChoice, expectedAsset } of [
     await useUserAgent(page, userAgent);
     await mockRelease(page);
     await page.goto('/');
-    await page.getByRole('link', { name: 'Open release downloads' }).click();
+    await page.getByRole('link', { name: 'Open releases on GitHub (external)' }).click();
     await expect(page.locator('#download-choices-label')).toBeVisible();
     await expect(page.getByRole('link', { name: expectedChoice })).toHaveAttribute('href', `${releaseRoot}/${expectedAsset}`);
-    await expect(page.getByRole('link', { name: 'Intel Mac (.pkg)' })).toHaveAttribute('href', `${releaseRoot}/sideload-readiness-macos-x86_64.pkg`);
-    await expect(page.getByRole('link', { name: 'Apple silicon Mac (.pkg)' })).toHaveAttribute('href', `${releaseRoot}/sideload-readiness-macos-aarch64.pkg`);
+    await expect(page.getByRole('link', { name: 'Intel Mac (.pkg) on GitHub (external)' })).toHaveAttribute('href', `${releaseRoot}/sideload-readiness-macos-x86_64.pkg`);
+    await expect(page.getByRole('link', { name: 'Apple silicon Mac (.pkg) on GitHub (external)' })).toHaveAttribute('href', `${releaseRoot}/sideload-readiness-macos-aarch64.pkg`);
     await expect(page.locator('#download-status')).toHaveText('Choose Apple silicon or Intel before downloading.');
   });
 }
@@ -150,7 +174,7 @@ for (const { label, userAgent } of [
     let releaseRequests = 0;
     await page.route(releaseApi, route => { releaseRequests += 1; return route.abort(); });
     await page.goto('/');
-    await page.getByRole('link', { name: 'Open release downloads' }).click();
+    await page.getByRole('link', { name: 'Open releases on GitHub (external)' }).click();
     await expect(page.locator('#download-status')).toHaveText('This browser does not identify a supported desktop system. Open releases to choose a file.');
     await expect(page.locator('#download-choices')).toBeHidden();
     expect(releaseRequests).toBe(0);
@@ -328,7 +352,7 @@ test('@claim:fleet-review a cached valid license enables the local report queue'
   });
   await page.goto('/');
   await expect(page.locator('.price')).toContainText('$39');
-  await expect(page.getByRole('link', { name: 'Buy fleet review' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/sideload-readiness/checkout');
+  await expect(page.getByRole('link', { name: 'Buy fleet review through Sociobot (external checkout)' })).toHaveAttribute('href', 'https://api.sociobot.in/api/v1/products/sideload-readiness/checkout');
   await expect(page.getByLabel('Add redacted JSON reports')).toBeVisible();
   await page.getByLabel('Add redacted JSON reports').setInputFiles({
     name: 'sample-report.json',
@@ -410,8 +434,8 @@ test('release lookup failures stay recoverable', async ({ browser }) => {
   await useUserAgent(page, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36');
   await page.route(releaseApi, route => route.abort());
   await page.goto('/');
-  await page.getByRole('link', { name: 'Open release downloads' }).click();
+  await page.getByRole('link', { name: 'Open releases on GitHub (external)' }).click();
   await expect(page.locator('#download-status')).toContainText('Downloads are being published');
-  await expect(page.getByRole('link', { name: 'Open release downloads' })).toHaveAttribute('href', 'https://github.com/B-Divyesh/sf-sideload-readiness/releases');
+  await expect(page.getByRole('link', { name: 'Open releases on GitHub (external)' })).toHaveAttribute('href', 'https://github.com/B-Divyesh/sf-sideload-readiness/releases');
   await context.close();
 });
