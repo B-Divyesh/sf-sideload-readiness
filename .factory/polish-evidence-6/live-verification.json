@@ -1,0 +1,57 @@
+{
+  "deployment_id": "320a5315-5148-4b13-9812-3bff9b3a315f",
+  "base_url": "https://sideload-readiness.sociobot.in",
+  "repair_commit": "18f759085b510c7ee423fe076d00512363e8c6b5",
+  "byte_identity": {
+    "/": "5aeea78bdd38f2ff7344d2ebebb30967b44e6afefbb0dc063862bf26feb6df6b",
+    "/assets/app.caece078a880.js": "caece078a8808fb83d25bfa406ee0e233f7fa3e3fcfb61c50758fe042d6b972e",
+    "/assets/style.153fe0711a98.css": "153fe0711a98b64e753dd98d8ab0b8a4826a45def135d3608bf4597d2741c63a",
+    "/service-worker.js": "3551646884b971ccaacbfd9c4368c10cbe0dce876744b0aa30c3d805ccf250a3"
+  },
+  "routes": {
+    "/": 200,
+    "/?demo=1": 200,
+    "/demo": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/unambiguously-missing-qa-route": 404
+  },
+  "external_link_disclosure": {
+    "test": "every off-origin link names itself as external in every rendered state",
+    "desktop": "pass",
+    "mobile": "pass",
+    "states": ["home", "demo", "privacy", "terms", "404", "macOS download choices"]
+  },
+  "axe_serious_or_critical": 0,
+  "console_errors": [],
+  "navigation_focus": "destination, Back, and Forward pass for Demo, Privacy, and Terms",
+  "demo": {
+    "reset_keys": ["demo:sideload-readiness", "real:sentinel"],
+    "demo_key_after_exit": null,
+    "real_sentinel_after_exit": "must-survive",
+    "device_api_requests": 0,
+    "offline_reload": true,
+    "external_requests": []
+  },
+  "mobile": {
+    "viewport": "390x844",
+    "sample_action_bottom_px": 490.625,
+    "action_outcome_bottom_px": 527.984375,
+    "horizontal_overflow": false,
+    "undersized_targets": []
+  },
+  "live_browser_suite": {
+    "passed": 75,
+    "skipped": 1,
+    "failed": 0
+  },
+  "lighthouse": {
+    "performance": 100,
+    "accessibility": 100,
+    "best_practices": 100,
+    "seo": 100,
+    "lcp_ms": 1212.598,
+    "tbt_ms": 30,
+    "cls": 0
+  }
+}
