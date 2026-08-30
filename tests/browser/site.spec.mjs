@@ -180,6 +180,25 @@ test('history navigation restores the route and focus', async ({ page }) => {
   await expect(page.locator('h1')).toBeFocused();
 });
 
+test('global routes and browser history focus the destination heading', async ({ page }) => {
+  for (const destination of [
+    { area: 'header', link: 'Demo', path: '/demo', heading: 'Find the next safe step' },
+    { area: 'header', link: 'Privacy', path: '/privacy', heading: 'Privacy for device reports' },
+    { area: 'footer', link: 'Terms', path: '/terms', heading: 'Terms for cautious use' }
+  ]) {
+    await page.goto('/');
+    await page.locator(destination.area).getByRole('link', { name: destination.link }).click();
+    await expect(page).toHaveURL(new RegExp(`${destination.path}$`));
+    await expect(page.getByRole('heading', { level: 1, name: destination.heading })).toBeFocused();
+    await page.goBack();
+    await expect(page).toHaveURL(new URL('/', process.env.BASE_URL || 'http://127.0.0.1:4173').href);
+    await expect(page.getByRole('heading', { level: 1, name: 'Check Android update safety' })).toBeFocused();
+    await page.goForward();
+    await expect(page).toHaveURL(new RegExp(`${destination.path}$`));
+    await expect(page.getByRole('heading', { level: 1, name: destination.heading })).toBeFocused();
+  }
+});
+
 for (const expected of [
   { path: '/', title: 'Sideload Readiness — Check Android update safety', canonical: '/', description: 'Check whether an Android device is ready for an approved sideloaded update.' },
   { path: '/?demo=1', title: 'Demo — Sideload Readiness', canonical: '/demo', description: 'Try a redacted Android readiness report with isolated sample data.' },
