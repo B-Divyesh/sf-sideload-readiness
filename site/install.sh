@@ -12,7 +12,13 @@ case "$os" in
 esac
 case "$arch" in
   x86_64|amd64) arch=x86_64 ;;
-  arm64|aarch64) arch=aarch64 ;;
+  arm64|aarch64)
+    if [ "$platform" = linux ]; then
+      echo "Unsupported CPU: $arch. Linux ARM64 releases are not published. Use the release page." >&2
+      exit 1
+    fi
+    arch=aarch64
+    ;;
   *) echo "Unsupported CPU: $arch. Use the release page." >&2; exit 1 ;;
 esac
 version=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v\([^"]*\)".*/\1/p' | head -n1)
@@ -30,5 +36,18 @@ tar -xzf "$tmp/$asset" -C "$tmp"
 install_dir="${HOME}/.local/bin"
 mkdir -p "$install_dir"
 install -m 755 "$tmp/sideload-readiness" "$install_dir/sideload-readiness"
+case "${SHELL:-}" in
+  */zsh) profile="${ZDOTDIR:-$HOME}/.zprofile" ;;
+  */bash) profile="$HOME/.bash_profile"; [ -f "$profile" ] || profile="$HOME/.profile" ;;
+  *) profile="$HOME/.profile" ;;
+esac
+path_line='export PATH="$HOME/.local/bin:$PATH"'
+if [ ! -f "$profile" ] || ! grep -Fqx "$path_line" "$profile"; then
+  mkdir -p "$(dirname "$profile")"
+  printf '\n# Sideload Readiness command\n%s\n' "$path_line" >> "$profile"
+fi
 echo "Installed sideload-readiness to $install_dir/sideload-readiness (SHA-256 verified)."
-case ":$PATH:" in *":$install_dir:"*) ;; *) echo "Add $install_dir to PATH, then run: sideload-readiness demo" ;; esac
+echo "Added $install_dir to future terminals through $profile."
+echo "To use it in this terminal, run:"
+printf 'export PATH="%s:$PATH"\n' "$install_dir"
+echo "Then run: sideload-readiness demo"

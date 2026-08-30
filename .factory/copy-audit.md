@@ -94,10 +94,11 @@ use of “unlock.” No other banned word appears.
 The README was checked sentence by sentence after the repair. Its task heading is
 `Run a device readiness check`; no sentence exceeds
 22 words and no banned marketing word appears. Every behavior or trust statement
-maps to one entry in `.factory/claims.json`. In particular, signer read failures,
-all six diagnostics, example parity, platform signing status, Sigstore provenance,
-browser-demo device isolation, release archive checksums, and the Sociobot-only
-billing boundary now have dedicated tagged tests.
+maps to one entry in `.factory/claims.json`. In particular, regular-check and
+demo-file storage, installer PATH setup, Linux ARM64 refusal, signer read
+failures, all six diagnostics, example parity, platform signing status, Sigstore
+provenance, browser-demo device isolation, release archive checksums, and the
+Sociobot-only billing boundary have dedicated tagged tests.
 
 ## Terminology
 

@@ -28,6 +28,7 @@ test('published CLI file-safety promises have one tagged public-command claim ea
   const claims = JSON.parse(await getRoot('.factory/claims.json'));
   const cli = await getRoot('tests/cli.rs');
   const expected = [
+    ['cli-report-storage', 'claim_cli_report_storage_matches_privacy_disclosure'],
     ['private-demo-file', 'claim_automatic_demo_file_is_private_and_never_reuses_a_name'],
     ['explicit-output-replacement', 'claim_explicit_demo_output_replaces_the_requested_file']
   ];
@@ -39,6 +40,28 @@ test('published CLI file-safety promises have one tagged public-command claim ea
     assert.equal([...cli.matchAll(tag)].length, 1, `${id} has one test tag`);
     assert.match(cli, new RegExp(`@claim:${id}\\nfn ${testName}`));
   }
+});
+
+test('privacy copy distinguishes regular output from automatic demo files', async () => {
+  const [app, readme, claims] = await Promise.all([
+    get('app.js'),
+    getRoot('README.md'),
+    getRoot('.factory/claims.json').then(JSON.parse)
+  ]);
+  assert.match(app, /A regular check writes a report file only with <code>--output PATH<\/code>/);
+  assert.match(app, /A demo without <code>--output<\/code> creates a private temporary report/);
+  assert.match(app, /The CLI never uploads reports/);
+  assert.match(readme, /A regular check writes a file only with\s+`--output PATH`/);
+  assert.match(readme, /A demo without `--output` creates a private temporary file/);
+  assert.match(readme, /The CLI has no report-upload command/);
+  const claim = claims.find(item => item.id === 'cli-report-storage');
+  assert.deepEqual(claim, {
+    id: 'cli-report-storage',
+    claim: 'A regular check writes a report file only with --output; a demo without --output creates a private temporary file and prints its path.',
+    where: 'Privacy page and README',
+    test: 'cargo test --test cli claim_cli_report_storage_matches_privacy_disclosure -- --exact',
+    sandbox: 'Run a public regular check and demo in isolated temporary paths; assert only the requested regular output is written and the automatic demo file is private.'
+  });
 });
 
 test('every declared claim has exactly one tagged executable test', async () => {

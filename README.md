@@ -24,9 +24,16 @@ curl -fsSL https://sideload-readiness.sociobot.in/install.sh | sh
 irm https://sideload-readiness.sociobot.in/install.ps1 | iex
 ```
 
-The installers download the matching release, verify its SHA-256 checksum,
-then place the binary on your PATH. Every current release payload and manifest has a valid
-GitHub OIDC Sigstore bundle. Verify a downloaded asset with:
+The shell installer writes to `~/.local/bin` and adds that directory to your
+startup profile. A `curl | sh` command cannot change its parent terminal, so
+run the exact `export PATH=…` line it prints before your first command. New
+terminals find `sideload-readiness` automatically. The PowerShell installer
+adds the directory to the current session and your user PATH. Every current
+release payload and manifest has a valid GitHub OIDC Sigstore bundle. Verify a
+downloaded asset with:
+
+The shell installer supports Linux x86_64 and macOS arm64 and x86_64. It stops
+before a download on Linux ARM64 because no release asset is published.
 
 ```sh
 cosign verify-blob --bundle sideload-readiness-linux-x86_64.tar.gz.sigstore.json \
@@ -138,11 +145,12 @@ accessibility, offline reloads, privacy, and release-download behavior.
 
 ## Privacy and license
 
-The CLI has no report-upload command. It only runs local `adb` commands and
-writes an output file when requested. Hardware serials are replaced with a
-redacted ID in exported reports. The site has no analytics or third-party
-runtime scripts. See [Privacy](https://sideload-readiness.sociobot.in/privacy)
-and [Terms](https://sideload-readiness.sociobot.in/terms).
+The CLI has no report-upload command. A regular check writes a file only with
+`--output PATH`. A demo without `--output` creates a private temporary file
+and prints its path. Hardware serials are replaced with a redacted ID in
+exported reports. The site has no analytics or third-party runtime scripts.
+See [Privacy](https://sideload-readiness.sociobot.in/privacy) and
+[Terms](https://sideload-readiness.sociobot.in/terms).
 
 ## License
 

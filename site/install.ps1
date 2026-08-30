@@ -18,5 +18,14 @@ try {
   Expand-Archive $archive -DestinationPath $temp -Force
   $installDir = Join-Path $env:LOCALAPPDATA 'SideloadReadiness\bin'; New-Item -ItemType Directory -Force -Path $installDir | Out-Null
   Copy-Item (Join-Path $temp 'sideload-readiness.exe') (Join-Path $installDir 'sideload-readiness.exe') -Force
-  Write-Output "Installed sideload-readiness to $installDir (SHA-256 verified). Add it to PATH, then run: sideload-readiness demo"
+  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  $userEntries = @($userPath -split ';' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+  if (-not ($userEntries | Where-Object { $_ -ieq $installDir })) {
+    [Environment]::SetEnvironmentVariable('Path', (@($userEntries + $installDir) -join ';'), 'User')
+  }
+  $sessionEntries = @($env:Path -split ';' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+  if (-not ($sessionEntries | Where-Object { $_ -ieq $installDir })) {
+    $env:Path = if ([string]::IsNullOrWhiteSpace($env:Path)) { $installDir } else { "$installDir;$env:Path" }
+  }
+  Write-Output "Installed sideload-readiness to $installDir (SHA-256 verified). It is ready in this PowerShell session and future sessions. Run: sideload-readiness demo"
 } finally { Remove-Item -Recurse -Force $temp }

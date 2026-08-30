@@ -191,11 +191,66 @@ esac
       const home = join(temporary, `home-${name}`);
       await mkdir(home);
       const { stdout } = await exec('sh', [new URL('../site/install.sh', import.meta.url).pathname], {
-        env: { ...process.env, HOME: home, FIXTURE_DIR: fixtures, MOCK_OS: os, MOCK_ARCH: arch, PATH: `${fakeBin}:${process.env.PATH}` }
+        env: { ...process.env, HOME: home, SHELL: '/bin/sh', FIXTURE_DIR: fixtures, MOCK_OS: os, MOCK_ARCH: arch, PATH: `${fakeBin}:${process.env.PATH}` }
       });
       assert.match(stdout, /SHA-256 verified/);
       assert.match(await readFile(join(home, '.local/bin/sideload-readiness'), 'utf8'), /fixture/);
+      const profile = join(home, '.profile');
+      assert.match(await readFile(profile, 'utf8'), /export PATH="\$HOME\/\.local\/bin:\$PATH"/);
+      const { stdout: commandOutput } = await exec('sh', ['-c', '. "$PROFILE"; sideload-readiness'], {
+        env: { ...process.env, HOME: home, PROFILE: profile, PATH: `${fakeBin}:${process.env.PATH}` }
+      });
+      assert.match(commandOutput, /sideload-readiness fixture/);
     }
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
+});
+
+test('@claim:installer-path-setup both one-line installers configure direct command use', async () => {
+  const [shell, powershell, readme, smoke] = await Promise.all([
+    read('site/install.sh'),
+    read('site/install.ps1'),
+    read('README.md'),
+    read('.github/workflows/consumer-smoke.yml')
+  ]);
+  assert.match(shell, /path_line='export PATH="\$HOME\/\.local\/bin:\$PATH"'/);
+  assert.match(shell, /To use it in this terminal, run:/);
+  assert.match(powershell, /\[Environment\]::SetEnvironmentVariable\('Path', .*'User'\)/);
+  assert.match(powershell, /\$env:Path = if/);
+  assert.match(readme, /cannot change its parent terminal/);
+  assert.match(readme, /current session and your user PATH/);
+  assert.match(smoke, /\. "\$HOME\/\.profile"\n          sideload-readiness --version/);
+  assert.match(smoke, /\n          sideload-readiness --version\n          sideload-readiness demo/);
+});
+
+test('@claim:installer-platform-support shell installer rejects unpublished Linux ARM64 before downloading', async () => {
+  const temporary = await mkdtemp(join(tmpdir(), 'sideload-readiness-linux-arm64-'));
+  const fakeBin = join(temporary, 'bin');
+  const marker = join(temporary, 'curl-called');
+  await mkdir(fakeBin);
+  const uname = join(fakeBin, 'uname');
+  const curl = join(fakeBin, 'curl');
+  await writeFile(uname, `#!/bin/sh
+case "$1" in
+  -s) printf '%s\\n' Linux ;;
+  -m) printf '%s\\n' aarch64 ;;
+  *) exit 2 ;;
+esac
+`);
+  await writeFile(curl, `#!/bin/sh
+printf '%s\\n' called > "$CURL_MARKER"
+exit 77
+`);
+  await Promise.all([chmod(uname, 0o755), chmod(curl, 0o755)]);
+  try {
+    const failure = await exec('sh', [new URL('../site/install.sh', import.meta.url).pathname], {
+      env: { ...process.env, HOME: temporary, CURL_MARKER: marker, PATH: `${fakeBin}:${process.env.PATH}` }
+    }).then(() => null, error => error);
+    assert.ok(failure, 'the installer must reject Linux ARM64');
+    assert.equal(failure.code, 1);
+    assert.match(failure.stderr, /Linux ARM64 releases are not published/);
+    assert.equal(await readFile(marker, 'utf8').then(() => true, () => false), false, 'no download is attempted');
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }

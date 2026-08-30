@@ -9,9 +9,11 @@ jobs:
     steps:
       - name: Install from the published shell path
         run: |
+          export SHELL=/bin/sh
           curl -fsSL https://sideload-readiness.sociobot.in/install.sh | sh
-          "$HOME/.local/bin/sideload-readiness" --version
-          "$HOME/.local/bin/sideload-readiness" demo
+          . "$HOME/.profile"
+          sideload-readiness --version
+          sideload-readiness demo
 
   homebrew:
     runs-on: macos-latest
@@ -29,8 +31,8 @@ jobs:
         shell: pwsh
         run: |
           irm https://sideload-readiness.sociobot.in/install.ps1 | iex
-          & "$env:LOCALAPPDATA\SideloadReadiness\bin\sideload-readiness.exe" --version
-          & "$env:LOCALAPPDATA\SideloadReadiness\bin\sideload-readiness.exe" demo
+          sideload-readiness --version
+          sideload-readiness demo
 
   scoop:
     runs-on: windows-latest

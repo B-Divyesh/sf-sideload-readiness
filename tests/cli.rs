@@ -159,6 +159,91 @@ fn claim_demo_uses_no_adb_and_writes_a_temporary_report() {
 
 #[cfg(unix)]
 #[test]
+// @claim:cli-report-storage
+fn claim_cli_report_storage_matches_privacy_disclosure() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let directory = temporary_path("claim-report-storage", "dir");
+    let temp_directory = directory.join("temporary-reports");
+    let adb_path = directory.join("adb.sh");
+    fs::create_dir(&directory).expect("isolated directory is created");
+    fs::create_dir(&temp_directory).expect("isolated temporary directory is created");
+    fs::write(
+        &adb_path,
+        r#"#!/bin/sh
+case "$*" in
+  devices) printf 'List of devices attached\nREPORT-STORAGE-DEVICE\tdevice\n' ;;
+  *ro.build.version.release) printf '15\n' ;;
+  *sys.usb.config) printf 'mtp,adb\n' ;;
+  *development_settings_enabled) printf '1\n' ;;
+  *'df -k /data') printf 'Filesystem 1K-blocks Used Available Use%% Mounted on\n/data 8000000 4000000 4000000 50%% /data\n' ;;
+  *ro.build.ab_update) printf 'true\n' ;;
+  *) printf '\n' ;;
+esac
+"#,
+    )
+    .expect("mock adb is written");
+    let mut permissions = fs::metadata(&adb_path)
+        .expect("mock adb metadata")
+        .permissions();
+    permissions.set_mode(0o755);
+    fs::set_permissions(&adb_path, permissions).expect("mock adb is executable");
+
+    let regular = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+        .args(["check", "--adb"])
+        .arg(&adb_path)
+        .env("TMPDIR", &temp_directory)
+        .output()
+        .expect("regular check starts");
+    assert!(
+        regular.status.success(),
+        "{}",
+        String::from_utf8_lossy(&regular.stderr)
+    );
+    assert!(String::from_utf8_lossy(&regular.stdout).contains("# Sideload readiness report"));
+    assert!(
+        fs::read_dir(&temp_directory)
+            .expect("temporary directory is readable")
+            .next()
+            .is_none(),
+        "a regular check without --output must not create a report file"
+    );
+
+    let requested = directory.join("requested.md");
+    let explicit = Command::new(env!("CARGO_BIN_EXE_sideload-readiness"))
+        .args(["check", "--adb"])
+        .arg(&adb_path)
+        .args(["--output"])
+        .arg(&requested)
+        .output()
+        .expect("explicit regular check starts");
+    assert!(
+        explicit.status.success(),
+        "{}",
+        String::from_utf8_lossy(&explicit.stderr)
+    );
+    assert!(fs::read_to_string(&requested)
+        .expect("requested report exists")
+        .contains("# Sideload readiness report"));
+
+    let automatic = run_automatic_demo(&temp_directory);
+    let metadata = fs::metadata(&automatic).expect("automatic demo report exists");
+    assert_eq!(automatic.parent(), Some(temp_directory.as_path()));
+    assert_eq!(
+        metadata.permissions().mode() & 0o077,
+        0,
+        "demo report is private"
+    );
+
+    fs::remove_file(automatic).expect("automatic report is removed");
+    fs::remove_file(requested).expect("requested report is removed");
+    fs::remove_file(adb_path).expect("mock adb is removed");
+    fs::remove_dir(temp_directory).expect("temporary directory is removed");
+    fs::remove_dir(directory).expect("isolated directory is removed");
+}
+
+#[cfg(unix)]
+#[test]
 // @claim:private-demo-file
 fn claim_automatic_demo_file_is_private_and_never_reuses_a_name() {
     let directory = temporary_path("automatic-demo-private", "dir");
