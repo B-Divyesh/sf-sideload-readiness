@@ -7,7 +7,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 const baseURL = process.argv[2] || 'https://sideload-readiness.sociobot.in';
 const browser = await chromium.launch();
-const evidence = { baseURL, identity: {}, routes: {}, consoleErrors: [], expectedNotFoundNetworkErrors: 0, mobile: {}, demoIsolation: {}, offline: false };
+const evidence = { baseURL, identity: {}, routes: {}, consoleErrors: [], expectedNotFoundNetworkErrors: 0, navigationFocus: [], mobile: {}, demoIsolation: {}, offline: false };
 
 const localIndex = await readFile(resolve('dist/site/index.html'));
 const indexText = localIndex.toString('utf8');
@@ -96,6 +96,28 @@ try {
   await page.getByRole('heading', { level: 3, name: 'Follow the report’s next step' }).waitFor();
   await page.getByRole('heading', { level: 3, name: 'What the CLI checks' }).waitFor();
   await page.getByRole('heading', { level: 3, name: 'What the CLI never does' }).waitFor();
+  for (const destination of [
+    { area: 'header', link: 'Demo', path: '/demo', heading: 'Find the next safe step' },
+    { area: 'header', link: 'Privacy', path: '/privacy', heading: 'Privacy for device reports' },
+    { area: 'footer', link: 'Terms', path: '/terms', heading: 'Terms for cautious use' }
+  ]) {
+    await page.goto(baseURL, { waitUntil: 'networkidle' });
+    await page.locator(destination.area).getByRole('link', { name: destination.link }).click();
+    assert.equal(new URL(page.url()).pathname, destination.path);
+    const destinationFocused = await page.getByRole('heading', { level: 1, name: destination.heading })
+      .evaluate(element => element === document.activeElement);
+    await page.goBack({ waitUntil: 'networkidle' });
+    const backFocused = await page.getByRole('heading', { level: 1, name: 'Check Android update safety' })
+      .evaluate(element => element === document.activeElement);
+    await page.goForward({ waitUntil: 'networkidle' });
+    const forwardFocused = await page.getByRole('heading', { level: 1, name: destination.heading })
+      .evaluate(element => element === document.activeElement);
+    evidence.navigationFocus.push({ ...destination, destinationFocused, backFocused, forwardFocused });
+    assert.equal(destinationFocused, true);
+    assert.equal(backFocused, true);
+    assert.equal(forwardFocused, true);
+  }
+  await page.goto(baseURL, { waitUntil: 'networkidle' });
   await page.evaluate(() => localStorage.setItem('real:sentinel', 'must-survive'));
   await page.getByRole('link', { name: 'Try it with sample data' }).click();
   assert.match(page.url(), /\?demo=1$/);
