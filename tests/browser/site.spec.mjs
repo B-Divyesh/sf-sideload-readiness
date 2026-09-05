@@ -83,6 +83,12 @@ test('390px first viewport contains the complete sample action and outcome', asy
   }
 });
 
+test('the browser sample recommends review when one check needs review', async ({ page }) => {
+  await page.goto('/demo');
+  await expect(page.locator('.score')).toHaveText('83% · Review the marked checks before updating.');
+  await expect(page.locator('.finding').filter({ hasText: 'Recovery update visibility' })).toContainText('needs review');
+});
+
 test('production responses enforce policy and cache fingerprinted assets immutably', async ({ page }) => {
   const response = await page.goto('/');
   expect(response.headers()['content-security-policy']).toContain("default-src 'self'");
@@ -361,6 +367,14 @@ test('@claim:fleet-review a cached valid license enables the local report queue'
   });
   await expect(page.getByText('1 local report queued.')).toBeVisible();
   await expect(page.getByRole('cell', { name: 'device-1234abcd' })).toBeVisible();
+});
+
+test('an unavailable checkout keeps the visitor on the page with a recovery step', async ({ page }) => {
+  await page.route('https://api.sociobot.in/api/v1/products/sideload-readiness/checkout', route => route.fulfill({ status: 500, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ error: 'Internal server error' }) }));
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Buy fleet review through Sociobot (external checkout)' }).click();
+  await expect(page).toHaveURL(new URL('/', process.env.BASE_URL || 'http://127.0.0.1:4173').href);
+  await expect(page.locator('#checkout-status')).toHaveText('Checkout is unavailable. Try again later. Your free single-device report still works.');
 });
 
 test('a free single-device visitor cannot open paid fleet tools', async ({ page }) => {

@@ -95,6 +95,11 @@ fn claim_demo_report_is_redacted_and_actionable() {
         .unwrap()
         .starts_with("device-"));
     assert_eq!(parsed["findings"].as_array().unwrap().len(), 6);
+    assert_eq!(
+        parsed["summary"],
+        "Review the marked checks before updating.",
+        "a recovery check that needs review must stop an otherwise high score from recommending an update"
+    );
     assert!(parsed["recovery_checklist"].as_array().unwrap().len() >= 4);
     fs::remove_file(output).expect("temporary report is removable");
 }
@@ -492,6 +497,10 @@ fn claim_signer_identity_is_extracted_and_compared() {
         .find(|finding| finding["id"] == "signer")
         .expect("signer finding");
     assert_eq!(signer["status"], "blocked");
+    assert_eq!(
+        mismatched["summary"],
+        "Do not update until the blocked checks are fixed."
+    );
     assert!(signer["detail"]
         .as_str()
         .expect("signer detail")
@@ -527,6 +536,10 @@ fn storage_below_the_floor_reports_the_exact_shortfall() {
         .find(|finding| finding["id"] == "storage")
         .expect("storage finding");
     assert_eq!(storage["status"], "blocked");
+    assert_eq!(
+        report["summary"],
+        "Do not update until the blocked checks are fixed."
+    );
     assert!(storage["detail"]
         .as_str()
         .expect("storage detail")
@@ -620,6 +633,10 @@ fn claim_live_report_covers_each_documented_check_and_recovery_outcome() {
         .unwrap()
         .contains("device maker's approved recovery instructions"));
     assert_eq!(report["recovery_checklist"].as_array().unwrap().len(), 5);
+    assert_eq!(
+        report["summary"], "Review the marked checks before updating.",
+        "the live report must not recommend updating while recovery needs review"
+    );
     fs::remove_file(adb_path).expect("mock adb can be removed");
     fs::remove_file(log_path).expect("mock log can be removed");
 }

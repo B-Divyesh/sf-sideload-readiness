@@ -1,6 +1,6 @@
 # Landing copy audit
 
-Rechecked from the rendered `/` route for perfection-loop round 6. Headings, actions, status
+Rechecked from the rendered `/` route for repair 9. Headings, actions, status
 labels, report text, and prose are included. No line exceeds 22 words. The
 literal safety statements about not unlocking devices are the allowed literal
 use of “unlock.” No other banned word appears.
@@ -17,7 +17,7 @@ use of “unlock.” No other banned word appears.
 | Free for one device | 4 | — |
 | Sample readiness report | 3 | — |
 | Readiness report / sample | 3 | — |
-| 83% · Fix one item before recovery | 6 | — |
+| 83% · Review the marked checks before updating. | 7 | — |
 | Authorized USB debugging | 3 | — |
 | One authorized sample device is visible to adb. | 8 | — |
 | Keep the authorization prompt accepted while checking. | 7 | — |
@@ -43,7 +43,7 @@ use of “unlock.” No other banned word appears.
 | Stop after an error and save the report before retrying. | 10 | — |
 | Install the command-line tool | 4 | — |
 | Signer matched. | 2 | — |
-| Review recovery before updating. | 4 | — |
+| Review the marked checks before updating. | 6 | — |
 | The command asks adb for status. | 6 | — |
 | It does not install apps, unlock devices, or change Android settings. | 11 | literal “unlock” |
 | The macOS package and Windows app are unsigned. | 8 | listed claim |
@@ -86,6 +86,8 @@ use of “unlock.” No other banned word appears.
 | Single-device checks stay free. | 4 | — |
 | $39 one-time purchase | 3 | — |
 | Buy fleet review through Sociobot (external checkout) | 7 | external destination named |
+| Opening checkout… | 2 | — |
+| Checkout is unavailable. Try again later. Your free single-device report still works. | 12 | — |
 | Have a license? | 4 | — |
 | Paste it here. | 3 | — |
 | Verify fleet license | 3 | — |
@@ -101,8 +103,9 @@ The README was checked sentence by sentence after the repair. Its task heading i
 maps to one entry in `.factory/claims.json`. In particular, regular-check and
 demo-file storage, installer PATH setup, Linux ARM64 refusal, signer read
 failures, all six diagnostics, example parity, platform signing status, Sigstore
-provenance, browser-demo device isolation, release archive checksums, and the
-Sociobot-only billing boundary have dedicated tagged tests.
+provenance, browser-demo device isolation, release archive checksums, the
+checksum-pinned winget manifest, and the Sociobot-only billing boundary have
+dedicated tagged tests.
 
 ## Terminology
 

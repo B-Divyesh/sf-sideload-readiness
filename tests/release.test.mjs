@@ -310,6 +310,37 @@ test('packaging metadata keeps the CLI identity and version', async () => {
   assert.match(brew, /e3a7c02fd347494669d24c46494cb69bbec1c16871eac267acb717c89ce339fb/);
 });
 
+test('@claim:winget-manifest the committed manifest checksums the published Windows archive', async () => {
+  const directory = 'winget/Sociobot.SideloadReadiness/0.1.4';
+  const [versionManifest, installerManifest, localeManifest] = await Promise.all([
+    read(`${directory}/Sociobot.SideloadReadiness.yaml`),
+    read(`${directory}/Sociobot.SideloadReadiness.installer.yaml`),
+    read(`${directory}/Sociobot.SideloadReadiness.locale.en-US.yaml`)
+  ]);
+  const field = (manifest, name) => manifest.match(new RegExp(String.raw`^\s*${name}:\s*(.+)$`, 'm'))?.[1]?.trim();
+  const assetUrl = field(installerManifest, 'InstallerUrl');
+  const manifestHash = field(installerManifest, 'InstallerSha256')?.toLowerCase();
+  assert.equal(field(versionManifest, 'PackageIdentifier'), 'Sociobot.SideloadReadiness');
+  assert.equal(field(versionManifest, 'PackageVersion'), '0.1.4');
+  assert.equal(field(localeManifest, 'PackageName'), 'Sideload Readiness');
+  assert.match(assetUrl || '', /\/releases\/download\/v0\.1\.4\/sideload-readiness-windows-x86_64\.zip$/);
+  assert.match(manifestHash || '', /^[a-f0-9]{64}$/);
+
+  const sumsUrl = assetUrl.replace(/\/sideload-readiness-windows-x86_64\.zip$/, '/SHA256SUMS');
+  const [sumsResponse, archiveResponse] = await Promise.all([fetch(sumsUrl), fetch(assetUrl)]);
+  assert.equal(sumsResponse.status, 200, 'the referenced release publishes SHA256SUMS');
+  assert.equal(archiveResponse.status, 200, 'the referenced Windows archive downloads');
+  const publishedHash = (await sumsResponse.text())
+    .split('\n')
+    .map(line => line.match(/^([a-f0-9]{64})\s+sideload-readiness-windows-x86_64\.zip$/))
+    .find(Boolean)?.[1];
+  const downloadedHash = createHash('sha256')
+    .update(Buffer.from(await archiveResponse.arrayBuffer()))
+    .digest('hex');
+  assert.equal(manifestHash, publishedHash, 'winget pins the published release checksum');
+  assert.equal(downloadedHash, publishedHash, 'the published Windows archive matches its advertised checksum');
+});
+
 test('crate package excludes dependencies installed for site checks', async () => {
   const { stdout } = await exec('cargo', ['package', '--list', '--allow-dirty', '--locked'], {
     cwd: new URL('..', import.meta.url).pathname

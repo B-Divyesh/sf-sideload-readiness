@@ -261,13 +261,7 @@ fn base_report(
 ) -> Report {
     let passed = findings.iter().filter(|f| f.status == "ready").count() as u8;
     let score = ((passed as f32 / findings.len() as f32) * 100.0).round() as u8;
-    let summary = if score >= 80 {
-        "Ready for a cautious approved-package update."
-    } else if score >= 50 {
-        "Fix the marked checks before updating."
-    } else {
-        "Not ready for an update yet."
-    };
+    let summary = recommendation_for(&findings);
     Report {
         schema: "sideload-readiness/v1", generated_at: now(), mode,
         device: Device { id, android, usb_mode }, score, summary, findings,
@@ -279,6 +273,19 @@ fn base_report(
             "If an update fails, stop after the error and save this report before retrying."
         ],
         privacy: "The report redacts the hardware serial. The CLI makes read-only adb queries and sends no data anywhere."
+    }
+}
+
+fn recommendation_for(findings: &[Finding]) -> &'static str {
+    if findings.iter().any(|finding| finding.status == "blocked") {
+        "Do not update until the blocked checks are fixed."
+    } else if findings
+        .iter()
+        .any(|finding| finding.status == "needs-review")
+    {
+        "Review the marked checks before updating."
+    } else {
+        "Ready for a cautious approved-package update."
     }
 }
 
@@ -597,6 +604,7 @@ mod tests {
         assert!(report.device.id.starts_with("device-"));
         assert!(!json.contains("FAKE_SERIAL"));
         assert_eq!(report.findings.len(), 6);
+        assert_eq!(report.summary, "Review the marked checks before updating.");
         assert!(report.recovery_checklist.len() >= 4);
     }
     #[test]
@@ -615,5 +623,44 @@ mod tests {
     #[test]
     fn non_apk_bytes_do_not_produce_a_signer() {
         assert!(extract_signer_sha256(b"signatures=[9a25705e]".to_vec()).is_err());
+    }
+
+    #[test]
+    fn report_recommendation_follows_the_most_severe_finding() {
+        let ready = vec![finding("ready", "Ready check", "ready", "OK", "Continue")];
+        assert_eq!(
+            recommendation_for(&ready),
+            "Ready for a cautious approved-package update."
+        );
+
+        let needs_review = vec![
+            finding("ready", "Ready check", "ready", "OK", "Continue"),
+            finding(
+                "review",
+                "Review check",
+                "needs-review",
+                "Review",
+                "Review first",
+            ),
+        ];
+        assert_eq!(
+            recommendation_for(&needs_review),
+            "Review the marked checks before updating."
+        );
+
+        let blocked = vec![
+            finding(
+                "review",
+                "Review check",
+                "needs-review",
+                "Review",
+                "Review first",
+            ),
+            finding("blocked", "Blocked check", "blocked", "Stop", "Fix first"),
+        ];
+        assert_eq!(
+            recommendation_for(&blocked),
+            "Do not update until the blocked checks are fixed."
+        );
     }
 }
