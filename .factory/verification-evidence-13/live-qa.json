@@ -1,0 +1,208 @@
+{
+  "firstRead": {
+    "desktop": {
+      "h1": "Check Android update safety",
+      "audience": "For people who maintain approved sideloaded apps when device rules or recovery paths change.",
+      "firstAction": "Try it with sample data",
+      "scrollY": 0,
+      "cta": {
+        "x": 104,
+        "y": 602.875,
+        "width": 256.65625,
+        "height": 49.828125
+      },
+      "outcome": {
+        "x": 375.65625,
+        "y": 605.421875,
+        "width": 304,
+        "height": 44.71875
+      },
+      "completeBeforeScroll": true
+    },
+    "phone": {
+      "h1": "Check Android update safety",
+      "audience": "For people who maintain approved sideloaded apps when device rules or recovery paths change.",
+      "firstAction": "Try it with sample data",
+      "scrollY": 0,
+      "cta": {
+        "x": 16,
+        "y": 442.3125,
+        "width": 243.671875,
+        "height": 48.3125
+      },
+      "outcome": {
+        "x": 16,
+        "y": 505.625,
+        "width": 336.171875,
+        "height": 22.359375
+      },
+      "completeBeforeScroll": true
+    }
+  },
+  "demo": {
+    "url": "https://sideload-readiness.sociobot.in/?demo=1",
+    "banner": true,
+    "findings": 6,
+    "score": "83% · Review the marked checks before updating.",
+    "recoveryStatus": "NEEDS REVIEW",
+    "keys": [
+      "demo:sideload-readiness",
+      "real:sentinel"
+    ],
+    "deviceApiRequests": 0,
+    "offOriginRequests": [],
+    "afterExit": {
+      "demoKey": null,
+      "realSentinel": "must-survive"
+    }
+  },
+  "keyboard": {
+    "skipFocused": true,
+    "focusStyle": {
+      "width": "3px",
+      "style": "solid",
+      "color": "rgb(11, 90, 162)"
+    },
+    "demoH1Focused": true,
+    "resetH1Focused": true
+  },
+  "reducedMotionZoom": {
+    "motion": {
+      "animation": "none",
+      "transition": "1e-05s"
+    },
+    "h1Visible": true,
+    "resetVisible": true,
+    "noHorizontalOverflow": true
+  },
+  "routes": {
+    "/": {
+      "status": 200,
+      "title": "Sideload Readiness — Check Android update safety",
+      "h1": 1,
+      "main": 1,
+      "lang": "en",
+      "seriousCritical": 0,
+      "errors": []
+    },
+    "/demo": {
+      "status": 200,
+      "title": "Demo — Sideload Readiness",
+      "h1": 1,
+      "main": 1,
+      "lang": "en",
+      "seriousCritical": 0,
+      "errors": []
+    },
+    "/privacy": {
+      "status": 200,
+      "title": "Privacy — Sideload Readiness",
+      "h1": 1,
+      "main": 1,
+      "lang": "en",
+      "seriousCritical": 0,
+      "errors": []
+    },
+    "/terms": {
+      "status": 200,
+      "title": "Terms — Sideload Readiness",
+      "h1": 1,
+      "main": 1,
+      "lang": "en",
+      "seriousCritical": 0,
+      "errors": []
+    },
+    "/verify13-intentional-missing": {
+      "status": 404,
+      "title": "Not found — Sideload Readiness",
+      "h1": 1,
+      "main": 1,
+      "lang": "en",
+      "seriousCritical": 0,
+      "errors": []
+    }
+  },
+  "recovery": {
+    "license": {
+      "emptyStatus": "Paste a license token, then verify it.",
+      "beforeInvalid": 0,
+      "afterInvalid": 1,
+      "invalidStatus": "That license is not active. You can buy a new fleet review license.",
+      "fleetTools": 0
+    },
+    "checkout503": {
+      "url": "https://sideload-readiness.sociobot.in/",
+      "status": "Checkout is unavailable. Try again later. Your free single-device report still works."
+    }
+  },
+  "links": {
+    "count": 11,
+    "statuses": [
+      {
+        "name": "Return to Sideload Readiness",
+        "href": "https://sideload-readiness.sociobot.in/",
+        "status": 200
+      },
+      {
+        "name": "Demo",
+        "href": "https://sideload-readiness.sociobot.in/demo",
+        "status": 200
+      },
+      {
+        "name": "Privacy",
+        "href": "https://sideload-readiness.sociobot.in/privacy",
+        "status": 200
+      },
+      {
+        "name": "Try it with sample data",
+        "href": "https://sideload-readiness.sociobot.in/?demo=1",
+        "status": 200
+      },
+      {
+        "name": "Open releases on GitHub (external)",
+        "href": "https://github.com/B-Divyesh/sf-sideload-readiness/releases",
+        "status": 200
+      },
+      {
+        "name": "Linux and macOS installer",
+        "href": "https://sideload-readiness.sociobot.in/install.sh",
+        "status": 200
+      },
+      {
+        "name": "PowerShell installer",
+        "href": "https://sideload-readiness.sociobot.in/install.ps1",
+        "status": 200
+      },
+      {
+        "name": "Buy fleet review through Sociobot (external checkout)",
+        "href": "https://api.sociobot.in/api/v1/products/sideload-readiness/checkout",
+        "status": 303
+      },
+      {
+        "name": "Terms",
+        "href": "https://sideload-readiness.sociobot.in/terms",
+        "status": 200
+      },
+      {
+        "name": "Param Factory on Sociobot (external)",
+        "href": "https://sociobot.in/",
+        "status": 200
+      },
+      {
+        "name": "Skip to report",
+        "href": "https://sideload-readiness.sociobot.in/verify13-intentional-missing",
+        "status": 404
+      }
+    ],
+    "expected": [
+      {
+        "name": "Skip to report",
+        "href": "https://sideload-readiness.sociobot.in/verify13-intentional-missing",
+        "status": 404,
+        "reason": "The link is an in-page anchor on the deliberately requested 404 document."
+      }
+    ],
+    "unexpected": []
+  },
+  "consoleErrors": []
+}
