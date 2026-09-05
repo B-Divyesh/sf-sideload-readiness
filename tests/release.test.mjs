@@ -383,12 +383,20 @@ test('@claim:published-installer-paths public installer paths match one checksum
     const [hash, filename] = line.trim().split(/\s+/);
     return [filename, hash];
   }));
-  for (const [asset, hash] of [
-    ['sideload-readiness-macos-aarch64.tar.gz', 'b5ab461d53ab829c23fd56da364ed5369461aaf6f0178f5edf3848c492288330'],
-    ['sideload-readiness-macos-x86_64.tar.gz', 'e3a7c02fd347494669d24c46494cb69bbec1c16871eac267acb717c89ce339fb'],
-    ['sideload-readiness-windows-x86_64.zip', scoop.hash]
-  ]) {
+  const formulaAssets = [...formula.matchAll(/url "([^"]+)"\s+sha256 "([a-f0-9]{64})"/g)]
+    .map(([, url, hash]) => [url.split('/').at(-1), { url, hash }]);
+  assert.equal(formulaAssets.length, 2, 'the public formula pins both macOS archives');
+  const installers = [
+    ...formulaAssets,
+    ['sideload-readiness-windows-x86_64.zip', { url: scoop.url, hash: scoop.hash }]
+  ];
+  for (const [asset, installer] of installers) {
+    const hash = installer.hash.toLowerCase();
     assert.equal(checksums.get(asset), hash);
-    assert.match(formula + scoopSource, new RegExp(`releases/download/v${version}/${asset}`));
+    assert.match(installer.url, new RegExp(`/releases/download/v${version}/${asset}$`));
+    const archiveResponse = await fetch(installer.url);
+    assert.equal(archiveResponse.status, 200, `${asset} downloads from its public installer path`);
+    const archiveHash = createHash('sha256').update(Buffer.from(await archiveResponse.arrayBuffer())).digest('hex');
+    assert.equal(archiveHash, hash, `${asset} matches the checksum pinned by its public installer path`);
   }
 });
