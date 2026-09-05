@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 — 2026-09-05
+
+- Make update recommendations follow the most severe readiness finding.
+- Keep checkout failures on the page with a recovery step.
+- Verify the checksum-pinned winget manifest against its published archive.
+
 ## 0.1.4 — 2026-08-29
 
 - Create demo reports in exclusive private temporary files.

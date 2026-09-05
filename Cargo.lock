@@ -486,7 +486,7 @@ dependencies = [
 
 [[package]]
 name = "sideload-readiness"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "apk-info-zip",
  "clap",
