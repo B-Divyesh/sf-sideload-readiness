@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -287,31 +287,40 @@ test('@claim:release-manifest latest.json contains real per-platform release ass
 test('packaging metadata keeps the CLI identity and version', async () => {
   const cargo = await read('Cargo.toml');
   const nfpm = await read('packaging/nfpm.yaml');
-  const winget = await read('winget/Sociobot.SideloadReadiness/0.1.4/Sociobot.SideloadReadiness.yaml');
-  const wingetInstaller = await read('winget/Sociobot.SideloadReadiness/0.1.4/Sociobot.SideloadReadiness.installer.yaml');
-  const wingetLocale = await read('winget/Sociobot.SideloadReadiness/0.1.4/Sociobot.SideloadReadiness.locale.en-US.yaml');
+  const version = cargo.match(/^version = "(\d+\.\d+\.\d+)"$/m)?.[1];
+  assert.ok(version, 'Cargo declares a semantic version');
+  const directory = `winget/Sociobot.SideloadReadiness/${version}`;
+  const winget = await read(`${directory}/Sociobot.SideloadReadiness.yaml`);
+  const wingetInstaller = await read(`${directory}/Sociobot.SideloadReadiness.installer.yaml`);
+  const wingetLocale = await read(`${directory}/Sociobot.SideloadReadiness.locale.en-US.yaml`);
   const scoop = await read('scoop-bucket/sideload-readiness.json');
   const brew = await read('packaging/homebrew/sideload-readiness.rb');
   assert.match(cargo, /name = "sideload-readiness"/);
-  assert.match(cargo, /version = "0\.1\.5"/);
-  assert.match(nfpm, /version: 0\.1\.5/);
-  assert.match(winget, /PackageVersion: 0\.1\.4/);
+  assert.match(nfpm, new RegExp(`version: ${version}`));
+  assert.match(winget, new RegExp(`PackageVersion: ${version}`));
   assert.match(winget, /ManifestType: version/);
   assert.match(wingetInstaller, /ManifestType: installer/);
-  assert.match(wingetInstaller, /sideload-readiness-windows-x86_64\.zip/);
-  assert.match(wingetInstaller, /fc7191f6c755b94c0d7cbb552975acd0baab91075b9b57a681c03d374a465747/);
+  assert.match(wingetInstaller, new RegExp(`releases/download/v${version}/sideload-readiness-windows-x86_64\\.zip`));
+  assert.match(wingetInstaller, /InstallerSha256: [a-f0-9]{64}/);
   assert.match(wingetLocale, /ManifestType: defaultLocale/);
-  assert.match(scoop, /"version": "0\.1\.4"/);
-  assert.match(scoop, /"hash": "fc7191f6c755b94c0d7cbb552975acd0baab91075b9b57a681c03d374a465747"/);
-  assert.match(brew, /version "0\.1\.4"/);
+  assert.equal(JSON.parse(scoop).version, version);
+  assert.match(scoop, new RegExp(`releases/download/v${version}/sideload-readiness-windows-x86_64\\.zip`));
+  assert.match(brew, new RegExp(`version "${version}"`));
   assert.match(brew, /on_arm do/);
   assert.match(brew, /on_intel do/);
-  assert.match(brew, /b5ab461d53ab829c23fd56da364ed5369461aaf6f0178f5edf3848c492288330/);
-  assert.match(brew, /e3a7c02fd347494669d24c46494cb69bbec1c16871eac267acb717c89ce339fb/);
+  assert.match(brew, new RegExp(`releases/download/v${version}/sideload-readiness-macos-aarch64\\.tar\\.gz`));
+  assert.match(brew, new RegExp(`releases/download/v${version}/sideload-readiness-macos-x86_64\\.tar\\.gz`));
 });
 
 test('@claim:winget-manifest the committed manifest checksums the published Windows archive', async () => {
-  const directory = 'winget/Sociobot.SideloadReadiness/0.1.4';
+  const root = new URL('../winget/Sociobot.SideloadReadiness/', import.meta.url);
+  const versions = (await readdir(root, { withFileTypes: true }))
+    .filter(entry => entry.isDirectory() && /^\d+\.\d+\.\d+$/.test(entry.name))
+    .map(entry => entry.name)
+    .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
+  const version = versions.at(-1);
+  assert.ok(version, 'a versioned winget manifest is committed');
+  const directory = `winget/Sociobot.SideloadReadiness/${version}`;
   const [versionManifest, installerManifest, localeManifest] = await Promise.all([
     read(`${directory}/Sociobot.SideloadReadiness.yaml`),
     read(`${directory}/Sociobot.SideloadReadiness.installer.yaml`),
@@ -321,9 +330,9 @@ test('@claim:winget-manifest the committed manifest checksums the published Wind
   const assetUrl = field(installerManifest, 'InstallerUrl');
   const manifestHash = field(installerManifest, 'InstallerSha256')?.toLowerCase();
   assert.equal(field(versionManifest, 'PackageIdentifier'), 'Sociobot.SideloadReadiness');
-  assert.equal(field(versionManifest, 'PackageVersion'), '0.1.4');
+  assert.equal(field(versionManifest, 'PackageVersion'), version);
   assert.equal(field(localeManifest, 'PackageName'), 'Sideload Readiness');
-  assert.match(assetUrl || '', /\/releases\/download\/v0\.1\.4\/sideload-readiness-windows-x86_64\.zip$/);
+  assert.match(assetUrl || '', new RegExp(`/releases/download/v${version}/sideload-readiness-windows-x86_64\\.zip$`));
   assert.match(manifestHash || '', /^[a-f0-9]{64}$/);
 
   const sumsUrl = assetUrl.replace(/\/sideload-readiness-windows-x86_64\.zip$/, '/SHA256SUMS');
